@@ -31,8 +31,12 @@ export async function POST(request: NextRequest) {
     newWord = await addWord(session.lineId, { word, meaning, example });
   } catch (err) {
     console.error("Failed to save word:", err);
+    const hasKv = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+    const hint = !hasKv
+      ? "Vercel の Storage で Upstash Redis を追加してください。"
+      : undefined;
     return NextResponse.json(
-      { error: "単語の保存に失敗しました" },
+      { error: hint || "単語の保存に失敗しました" },
       { status: 500 }
     );
   }
