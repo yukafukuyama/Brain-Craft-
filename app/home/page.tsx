@@ -129,17 +129,22 @@ export default function HomePage() {
           </Link>
 
           {LINE_ADD_FRIEND_URL ? (
-            <a
-              href={LINE_ADD_FRIEND_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full py-4 bg-[#00c300] hover:bg-[#00a800] text-white font-medium rounded-xl flex items-center justify-center gap-2 transition-colors"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755z" />
-              </svg>
-              LINE通知の登録（友だち追加）
-            </a>
+            <div className="space-y-2">
+              <p className="text-sm text-gray-600">
+                友だち追加すると、単語登録時にLINEへ通知が届き、毎日8:00に復習通知が送られます。
+              </p>
+              <a
+                href={LINE_ADD_FRIEND_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-4 bg-[#00c300] hover:bg-[#00a800] text-white font-medium rounded-xl flex items-center justify-center gap-2 transition-colors"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755z" />
+                </svg>
+                LINE通知の登録（友だち追加）
+              </a>
+            </div>
           ) : (
             <p className="text-sm text-gray-500 text-center py-2">
               LINE通知は Messaging API 設定後に利用できます
