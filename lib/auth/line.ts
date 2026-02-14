@@ -19,6 +19,25 @@ export function generateState(): string {
   return randomBytes(32).toString("base64url");
 }
 
+/** Cookie不要：stateにcodeVerifierを埋め込み（LINEアプリ内ブラウザでも1回でログインできるようにする） */
+export function createStateWithVerifier(codeVerifier: string): string {
+  const payload = JSON.stringify({ v: codeVerifier });
+  return Buffer.from(payload, "utf-8").toString("base64url");
+}
+
+export function parseStateForVerifier(state: string): string | null {
+  if (!state || typeof state !== "string") return null;
+  const s = state.replace(/\s/g, ""); // URLパラメータで + → 空格 になる場合の対策
+  try {
+    const payload = JSON.parse(
+      Buffer.from(s, "base64url").toString("utf-8")
+    );
+    return typeof payload?.v === "string" ? payload.v : null;
+  } catch {
+    return null;
+  }
+}
+
 export function buildAuthUrl(params: {
   clientId: string;
   redirectUri: string;
@@ -34,6 +53,7 @@ export function buildAuthUrl(params: {
     scope: "profile openid",
     code_challenge: codeChallenge,
     code_challenge_method: "S256",
+    max_age: "0",
   });
   return `${LINE_AUTH_URL}?${searchParams.toString()}`;
 }

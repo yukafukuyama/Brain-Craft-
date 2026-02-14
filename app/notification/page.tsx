@@ -1,0 +1,156 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { BottomNav } from "@/components/BottomNav";
+
+export default function NotificationPage() {
+  const [notificationEnabled, setNotificationEnabled] = useState(false);
+  const [notificationTimes, setNotificationTimes] = useState<string[]>(["08:00", "", ""]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/settings/notification")
+      .then((res) => (res.ok ? res.json() : { enabled: false, times: ["08:00"] }))
+      .then((data: { enabled?: boolean; time?: string; times?: string[] }) => {
+        setNotificationEnabled(data.enabled ?? false);
+        const ts = data.times ?? (data.time ? [data.time] : ["08:00"]);
+        setNotificationTimes([ts[0] ?? "08:00", ts[1] ?? "", ts[2] ?? ""]);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleSaveNotification = async (overrides?: { enabled?: boolean; times?: string[] }) => {
+    setSaving(true);
+    setSaved(false);
+    try {
+      const enabled = overrides?.enabled ?? notificationEnabled;
+      const times = (overrides?.times ?? notificationTimes).filter((t) => t.trim());
+      const res = await fetch("/api/settings/notification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled, times: times.length ? times : ["08:00"] }),
+      });
+      if (res.ok) {
+        if (overrides?.enabled !== undefined) setNotificationEnabled(overrides.enabled);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-white pb-20">
+      <header className="px-4 pt-6 pb-4">
+        <h1 className="text-xl font-bold text-gray-900">通知</h1>
+        <p className="text-sm text-gray-500 mt-1">
+          設定した時刻に、登録した単語の復習通知がLINEに届きます
+        </p>
+      </header>
+
+      <main className="px-4 max-w-lg mx-auto space-y-6">
+        <section className="bg-gray-50 rounded-xl p-4 space-y-4">
+          {loading ? (
+            <p className="text-gray-500">読み込み中...</p>
+          ) : (
+            <>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={notificationEnabled}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setNotificationEnabled(checked);
+                    handleSaveNotification({ enabled: checked, times: notificationTimes });
+                  }}
+                  className="w-5 h-5 rounded border-gray-300"
+                />
+                <span className="text-gray-700 font-medium">毎日お知らせを送る</span>
+              </label>
+
+              {notificationEnabled && (
+                <div className="space-y-3 pt-2 border-t border-gray-200">
+                  <span className="block text-sm font-medium text-gray-700">
+                    送信時刻（最大3つ・日本時間）
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {[0, 1, 2].map((i) => (
+                      <input
+                        key={i}
+                        type="time"
+                        value={notificationTimes[i] ?? ""}
+                        onChange={(e) => {
+                          const next = [...notificationTimes];
+                          next[i] = e.target.value;
+                          setNotificationTimes(next);
+                        }}
+                        className="px-4 py-2.5 bg-white rounded-lg border border-gray-200 text-base"
+                      />
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleSaveNotification()}
+                    disabled={saving}
+                    className="w-full py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {saving ? "保存中..." : "時刻を保存"}
+                  </button>
+                </div>
+              )}
+
+              {saved && (
+                <p className="text-sm text-green-600 font-medium">✓ 保存しました</p>
+              )}
+
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const res = await fetch("/api/settings/notification/send-now", {
+                      method: "POST",
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                      alert("LINEに送信しました！");
+                    } else {
+                      alert(data.error || "送信に失敗しました");
+                    }
+                  } catch {
+                    alert("通信エラー");
+                  }
+                }}
+                className="w-full py-3 border border-blue-600 text-blue-600 font-medium rounded-lg hover:bg-blue-50"
+              >
+                今すぐ送信してテスト
+              </button>
+            </>
+          )}
+        </section>
+
+        <div className="space-y-2 text-sm text-gray-500">
+          <p>※ cron-job.org でcronを設定すると、指定時刻に自動送信されます</p>
+          <p className="text-amber-600">
+            通知が来ない場合：LINEの設定→通知→「メッセージ通知」をONに。トーク画面右上→通知ONを確認してください。
+          </p>
+        </div>
+
+        <div className="pt-4">
+          <Link
+            href="/settings"
+            className="text-blue-600 hover:underline text-sm"
+          >
+            ← 設定にもどる
+          </Link>
+        </div>
+      </main>
+
+      <BottomNav variant="4" />
+    </div>
+  );
+}

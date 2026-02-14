@@ -22,6 +22,10 @@ export default async function SplashPage({
         // パース失敗時はログイン画面を表示
       }
     }
+    // LINE設定あり：/login 経由で遷移（ブラウザがドメイン認識してから認証＝1回で成功しやすい）
+    if (process.env.LINE_CHANNEL_ID) {
+      redirect("/login");
+    }
   }
   const errorMessages: Record<string, string> = {
     config: "LINEログインの設定がありません。",
@@ -70,6 +74,14 @@ export default async function SplashPage({
           LINEでログイン
         </Link>
 
+        {process.env.NODE_ENV === "development" && (
+          <Link
+            href="/api/dev/login"
+            className="mt-4 text-sm text-amber-600 hover:text-amber-700 underline"
+          >
+            開発用：既存データでログイン
+          </Link>
+        )}
         <details className="mt-8 w-full max-w-sm text-left">
           <summary className="text-sm text-gray-500 cursor-pointer hover:text-gray-700">
             うまくログインできない場合

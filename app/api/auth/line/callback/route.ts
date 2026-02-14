@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import {
   exchangeCodeForToken,
   decodeIdToken,
+  parseStateForVerifier,
 } from "@/lib/auth/line";
 
 export async function GET(request: NextRequest) {
@@ -25,13 +26,23 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/?error=invalid_callback", request.url));
   }
 
-  const cookieStore = await cookies();
-  const savedState = cookieStore.get("line_oauth_state")?.value;
-  const codeVerifier = cookieStore.get("line_oauth_code_verifier")?.value;
-
-  if (!savedState || state !== savedState || !codeVerifier) {
+  // codeVerifier: 1) state から取得（LINEアプリ内）、2) なければ Cookie から（スマホSafari等）
+  let codeVerifier = parseStateForVerifier(state);
+  if (!codeVerifier) {
+    const cookieStore = await cookies();
+    const savedState = cookieStore.get("line_oauth_state")?.value;
+    const fromCookie = cookieStore.get("line_oauth_code_verifier")?.value;
+    if (savedState === state && fromCookie) {
+      codeVerifier = fromCookie;
+    }
+  }
+  if (!codeVerifier) {
     return NextResponse.redirect(new URL("/?error=invalid_state", request.url));
   }
+
+  const cookieStore = await cookies();
+  cookieStore.set("line_oauth_state", "", { maxAge: 0, path: "/" });
+  cookieStore.set("line_oauth_code_verifier", "", { maxAge: 0, path: "/" });
 
   const clientId = process.env.LINE_CHANNEL_ID;
   const clientSecret = process.env.LINE_CHANNEL_SECRET;
@@ -59,12 +70,11 @@ export async function GET(request: NextRequest) {
       accessToken: tokens.access_token,
     });
 
-    cookieStore.set("line_oauth_state", "", { maxAge: 0, path: "/" });
-    cookieStore.set("line_oauth_code_verifier", "", { maxAge: 0, path: "/" });
+    const isProd = process.env.NODE_ENV === "production";
     cookieStore.set("braincraft_session", session, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: isProd,
+      sameSite: isProd ? "none" : "lax",
       maxAge: 60 * 60 * 24 * 30,
       path: "/",
     });

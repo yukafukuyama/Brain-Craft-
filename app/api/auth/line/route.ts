@@ -2,19 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import {
   generatePKCE,
-  generateState,
   buildAuthUrl,
+  createStateWithVerifier,
 } from "@/lib/auth/line";
 
 export async function GET(request: NextRequest) {
   const clientId = process.env.LINE_CHANNEL_ID;
   if (!clientId) {
-    // LINE未設定時：開発用にホームへ直接遷移（本番では .env.local を設定してください）
     return NextResponse.redirect(new URL("/home", request.url));
   }
 
   const { codeVerifier, codeChallenge } = generatePKCE();
-  const state = generateState();
+  // state に codeVerifier を埋め込む（LINEアプリ内）＋ Cookie も設定（スマホSafari等のフォールバック）
+  const state = createStateWithVerifier(codeVerifier);
 
   const baseUrl =
     process.env.NEXT_PUBLIC_APP_URL ||
@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
 
   const isProd = process.env.NODE_ENV === "production";
   const cookieStore = await cookies();
+  // 本番：LINEアプリ内・モバイルで Cookie が使えるよう SameSite=None
   cookieStore.set("line_oauth_state", state, {
     httpOnly: true,
     secure: isProd,
