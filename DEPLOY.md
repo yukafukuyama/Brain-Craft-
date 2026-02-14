@@ -88,7 +88,21 @@ vercel
 
 ## Cron（復習通知）について
 
-`vercel.json` で復習通知が 5 分ごとに実行されるよう設定済みです。Vercel にデプロイすると自動で有効になります。`CRON_SECRET` を設定しておくとセキュアに実行されます。
+ユーザーが時刻を最大3つまで選べるようにするには、**cron-job.org** で定期的にAPIを叩く必要があります。
+
+### cron-job.org の設定手順
+
+1. [cron-job.org](https://cron-job.org) に無料登録
+2. **Create cronjob** をクリック
+3. 以下を設定：
+   - **URL**: `https://あなたのプロジェクト.vercel.app/api/cron/send-notifications`
+   - **Schedule**: 5分ごと（`*/5 * * * *`）
+   - **Request Settings** → **Headers** を追加：
+     - Name: `Authorization`
+     - Value: `Bearer CRON_SECRETの値`（例: `Bearer braincraft2024secret`）
+4. **Create** をクリック
+
+これで5分ごとにチェックされ、ユーザーが設定した時刻に通知が送られます。
 
 ---
 

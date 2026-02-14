@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { Logo } from "@/components/Logo";
 
 export default async function SplashPage({
@@ -7,12 +9,28 @@ export default async function SplashPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const params = await searchParams;
+
+  // ログイン済みならホームへ自動リダイレクト
+  if (!params.error) {
+    const cookieStore = await cookies();
+    const session = cookieStore.get("braincraft_session")?.value;
+    if (session) {
+      try {
+        const data = JSON.parse(session);
+        if (data?.lineId) redirect("/home");
+      } catch {
+        // パース失敗時はログイン画面を表示
+      }
+    }
+  }
   const errorMessages: Record<string, string> = {
-    config: "LINEログインの設定がありません。.env.local を確認してください。",
-    invalid_state: "セッションが無効です。もう一度お試しください。",
-    invalid_callback: "認証に失敗しました。もう一度お試しください。",
-    token_exchange: "トークン取得に失敗しました。もう一度お試しください。",
-    ACCESS_DENIED: "ログインがキャンセルされました。",
+    config: "LINEログインの設定がありません。",
+    invalid_state:
+      "ログインに失敗しました。LINEアプリ内で開いている場合は、右上「…」→「ブラウザで開く」でSafariやChromeで開き直してから、もう一度お試しください。",
+    invalid_callback:
+      "認証に失敗しました。ブラウザで直接開くか、Cookieを有効にして再度お試しください。",
+    token_exchange: "トークン取得に失敗しました。しばらく待ってからもう一度お試しください。",
+    ACCESS_DENIED: "ログインがキャンセルされました。もう一度お試しください。",
   };
   const errorMsg = params.error ? errorMessages[params.error] || "エラーが発生しました。" : null;
   return (
@@ -36,9 +54,10 @@ export default async function SplashPage({
           <p className="mt-4 text-sm text-red-600 text-center">{errorMsg}</p>
         )}
         {/* LINE Login Button */}
+        <p className="mt-12 text-sm text-gray-500">LINEアカウントが必要です</p>
         <Link
           href="/api/auth/line"
-          className="mt-24 w-full max-w-sm flex items-center justify-center gap-3 bg-[#00c300] hover:bg-[#00a800] text-white font-bold py-4 px-8 rounded-full transition-colors"
+          className="mt-4 w-full max-w-sm flex items-center justify-center gap-3 bg-[#00c300] hover:bg-[#00a800] text-white font-bold py-4 px-8 rounded-full transition-colors"
         >
           <svg
             width="24"
@@ -50,6 +69,19 @@ export default async function SplashPage({
           </svg>
           LINEでログイン
         </Link>
+
+        <details className="mt-8 w-full max-w-sm text-left">
+          <summary className="text-sm text-gray-500 cursor-pointer hover:text-gray-700">
+            うまくログインできない場合
+          </summary>
+          <ul className="mt-2 text-xs text-gray-600 space-y-1 pl-4 list-disc">
+            <li>
+              <strong>エラーになる場合</strong>：LINEアプリ内で開いていると失敗しやすいです。右上「…」→「ブラウザで開く」でSafariやChromeを選び、再度お試しください
+            </li>
+            <li>ブラウザのCookieを有効にしてください</li>
+            <li>「Login to Vercel」と出る→管理者に連絡してください</li>
+          </ul>
+        </details>
       </div>
 
       {/* Footer */}

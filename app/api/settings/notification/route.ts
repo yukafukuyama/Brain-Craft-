@@ -35,15 +35,28 @@ export async function POST(request: NextRequest) {
   }
   const body = await request.json();
   const enabled = body.enabled;
-  const updates: { enabled?: boolean; time?: string } = {};
+  const updates: { enabled?: boolean; times?: string[] } = {};
   if (typeof enabled === "boolean") updates.enabled = enabled;
-  if (body.time != null) {
+  if (Array.isArray(body.times)) {
+    updates.times = body.times
+      .map((t: unknown) => String(t ?? "").trim())
+      .filter((t: string) => /^\d{1,2}:\d{1,2}$/.test(t))
+      .map((t: string) => {
+        const m = t.match(/^(\d{1,2}):(\d{1,2})$/);
+        if (!m) return "";
+        const h = Math.min(23, Math.max(0, parseInt(m[1], 10)));
+        const min = Math.min(59, Math.max(0, parseInt(m[2], 10)));
+        return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+      })
+      .filter(Boolean)
+      .slice(0, 3);
+  } else if (body.time != null) {
     const time = String(body.time).trim();
     const match = time.match(/^(\d{1,2}):(\d{1,2})$/);
     if (match) {
       const h = Math.min(23, Math.max(0, parseInt(match[1], 10)));
       const m = Math.min(59, Math.max(0, parseInt(match[2], 10)));
-      updates.time = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+      updates.times = [`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`];
     }
   }
   const settings = await setNotificationSettings(session.lineId, updates);

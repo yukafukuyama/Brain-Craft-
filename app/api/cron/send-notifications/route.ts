@@ -31,14 +31,12 @@ export async function GET(request: NextRequest) {
   const lineIds = await getUsersToNotify(hour, minute);
 
   const results: { lineId: string; ok: boolean }[] = [];
+  const timeStr = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
   for (const lineId of lineIds) {
     const words = await getWords(lineId);
-    const { getNotificationSettings } = await import("@/lib/settings-store");
-    const settings = await getNotificationSettings(lineId);
-    if (settings.lastSentDate === dateStr) continue; // 同日送信済み
 
     if (words.length === 0) {
-      await markNotificationSent(lineId, dateStr);
+      await markNotificationSent(lineId, dateStr, timeStr);
       results.push({ lineId, ok: true });
       continue;
     }
@@ -57,7 +55,7 @@ export async function GET(request: NextRequest) {
     const ok = await sendPushMessage(channelAccessToken, lineId, text);
     results.push({ lineId, ok });
     if (ok) {
-      await markNotificationSent(lineId, dateStr);
+      await markNotificationSent(lineId, dateStr, timeStr);
     }
   }
 
