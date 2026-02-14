@@ -44,14 +44,25 @@ export async function setNotificationSettings(
   return updated;
 }
 
+function toHHmm(h: number, m: number): string {
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+function normalizeTime(t: string): string {
+  const m = t.match(/^(\d{1,2}):(\d{1,2})$/);
+  if (!m) return "";
+  const h = Math.min(23, Math.max(0, parseInt(m[1], 10)));
+  const min = Math.min(59, Math.max(0, parseInt(m[2], 10)));
+  return toHHmm(h, min);
+}
+
 export async function getUsersToNotify(nowHour: number, nowMinute: number): Promise<string[]> {
   const lineIds = await storageKeys(SETTINGS_PREFIX);
   const result: string[] = [];
-  const timeStr = `${String(nowHour).padStart(2, "0")}:${String(nowMinute).padStart(2, "0")}`;
+  const timeStr = toHHmm(nowHour, nowMinute);
   for (const lineId of lineIds) {
     const s = await getSettings(lineId);
     const n = s?.notification;
-    const times = n?.times ?? (n?.time ? [n.time] : []);
+    const times = (n?.times ?? (n?.time ? [n.time] : [])).map(normalizeTime).filter(Boolean);
     if (n?.enabled && times.includes(timeStr)) {
       const dateStr = new Date(new Date().getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
       const sentToday = n.lastSentDate === dateStr && (n.lastSentTimes ?? []).includes(timeStr);

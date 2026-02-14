@@ -59,5 +59,9 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ sent: results.length, results });
+  return NextResponse.json({
+    sent: results.length,
+    results,
+    debug: { jst: { hour, minute }, timeStr, userCount: lineIds.length },
+  });
 }
