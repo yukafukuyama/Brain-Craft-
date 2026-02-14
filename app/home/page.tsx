@@ -5,7 +5,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/BottomNav";
 
-const LINE_ADD_FRIEND_URL = process.env.NEXT_PUBLIC_LINE_ADD_FRIEND_URL;
+const LINE_ADD_FRIEND_URL = (() => {
+  const url = process.env.NEXT_PUBLIC_LINE_ADD_FRIEND_URL?.trim();
+  if (!url || !url.startsWith("https://line.me")) return "";
+  return url;
+})();
+
+// スマホでLINEアプリを直接開くURL（line://）
+const LINE_DEEP_LINK = LINE_ADD_FRIEND_URL
+  ? LINE_ADD_FRIEND_URL.replace(/^https:\/\/line\.me\/R?\/?/, "line://")
+  : "";
 
 export default function HomePage() {
   const router = useRouter();
@@ -137,6 +146,12 @@ export default function HomePage() {
                 href={LINE_ADD_FRIEND_URL}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={(e) => {
+                  if (LINE_DEEP_LINK && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+                    e.preventDefault();
+                    window.location.href = LINE_DEEP_LINK;
+                  }
+                }}
                 className="w-full py-4 bg-[#00c300] hover:bg-[#00a800] text-white font-medium rounded-xl flex items-center justify-center gap-2 transition-colors"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
