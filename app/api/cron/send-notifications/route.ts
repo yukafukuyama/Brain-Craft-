@@ -38,8 +38,7 @@ export async function GET(request: NextRequest) {
     if (settings.lastSentDate === dateStr) continue; // 同日送信済み
 
     if (words.length === 0) {
-      const timeStr = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-      await markNotificationSent(lineId, dateStr, timeStr);
+      await markNotificationSent(lineId, dateStr);
       results.push({ lineId, ok: true });
       continue;
     }
@@ -55,11 +54,10 @@ export async function GET(request: NextRequest) {
       blocks.join("\n\n") +
       (words.length > 5 ? `\n\n他 ${words.length - 5} 件...` : "");
 
-    const timeStr = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
     const ok = await sendPushMessage(channelAccessToken, lineId, text);
     results.push({ lineId, ok });
     if (ok) {
-      await markNotificationSent(lineId, dateStr, timeStr);
+      await markNotificationSent(lineId, dateStr);
     }
   }
 

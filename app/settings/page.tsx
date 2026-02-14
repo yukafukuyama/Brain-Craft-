@@ -6,7 +6,6 @@ import { Logo } from "@/components/Logo";
 
 export default function SettingsPage() {
   const [notificationEnabled, setNotificationEnabled] = useState(false);
-  const [notificationTimes, setNotificationTimes] = useState<string[]>(["08:00", "", ""]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -14,25 +13,22 @@ export default function SettingsPage() {
   useEffect(() => {
     fetch("/api/settings/notification")
       .then((res) => (res.ok ? res.json() : { enabled: false, times: ["08:00"] }))
-      .then((data: { enabled?: boolean; time?: string; times?: string[] }) => {
+      .then((data: { enabled?: boolean }) => {
         setNotificationEnabled(data.enabled ?? false);
-        const ts = data.times ?? (data.time ? [data.time] : ["08:00"]);
-        setNotificationTimes([ts[0] ?? "08:00", ts[1] ?? "", ts[2] ?? ""]);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  const handleSaveNotification = async (overrides?: { enabled?: boolean; times?: string[] }) => {
+  const handleSaveNotification = async (overrides?: { enabled?: boolean }) => {
     setSaving(true);
     setSaved(false);
     try {
       const enabled = overrides?.enabled ?? notificationEnabled;
-      const times = (overrides?.times ?? notificationTimes).filter((t) => t.trim());
       const res = await fetch("/api/settings/notification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enabled, times: times.length ? times : ["08:00"] }),
+        body: JSON.stringify({ enabled, time: "08:00" }),
       });
       if (res.ok) {
         if (overrides?.enabled !== undefined) setNotificationEnabled(overrides.enabled);
@@ -65,43 +61,15 @@ export default function SettingsPage() {
                     onChange={(e) => {
                       const checked = e.target.checked;
                       setNotificationEnabled(checked);
-                      handleSaveNotification({ enabled: checked, times: notificationTimes });
+                      handleSaveNotification({ enabled: checked });
                     }}
                     className="w-5 h-5 rounded border-gray-300"
                   />
                   <span className="text-gray-700">毎日お知らせを送る</span>
                 </label>
-                {notificationEnabled && (
-                  <div className="space-y-3">
-                    <span className="block text-gray-700">送信時刻（最大3つ、日本時間）</span>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {[0, 1, 2].map((i) => (
-                        <input
-                          key={i}
-                          type="time"
-                          value={notificationTimes[i] ?? ""}
-                          onChange={(e) => {
-                            const next = [...notificationTimes];
-                            next[i] = e.target.value;
-                            setNotificationTimes(next);
-                          }}
-                          className="px-3 py-2 bg-white rounded-lg border border-gray-200"
-                        />
-                      ))}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleSaveNotification()}
-                      disabled={saving}
-                      className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                    >
-                      {saving ? "保存中..." : "保存"}
-                    </button>
-                  </div>
-                )}
                 {saved && <p className="text-xs text-green-600">保存しました</p>}
                 <p className="text-xs text-gray-500">
-                  設定した時刻に、登録した単語の復習通知がLINEに届きます。
+                  毎日8:00（日本時間）に、登録した単語の復習通知がLINEに届きます。
                 </p>
                 <p className="text-xs text-amber-600">
                   ※通知が来ない場合：LINEの設定→通知→「メッセージ通知」をONに。トーク画面右上→通知ONを確認してください。

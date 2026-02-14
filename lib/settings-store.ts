@@ -4,20 +4,21 @@ const SETTINGS_PREFIX = "settings:";
 
 export type NotificationSettings = {
   enabled: boolean;
-  time?: string; // 後方互換
-  times?: string[]; // "HH:mm" 最大3つ e.g. ["08:00", "12:00", "20:00"]
+  time?: string; // "HH:mm" 1日1回の送信時刻（デフォルト 08:00）
+  times?: string[]; // 後方互換
   lastSentDate?: string;
-  lastSentTimes?: string[]; // 同日に送信済みの時刻
 };
 
 type UserSettings = { notification: NotificationSettings };
 
+const DEFAULT_TIME = "08:00";
+
 async function getSettings(lineId: string): Promise<UserSettings> {
   const data = await storageGet<UserSettings>(SETTINGS_PREFIX + lineId);
-  if (!data) return { notification: { enabled: false, times: ["08:00"] } };
+  if (!data) return { notification: { enabled: false, time: DEFAULT_TIME } };
   const n = data.notification;
-  if (!n.times && n.time) n.times = [n.time];
-  if (!n.times?.length) n.times = ["08:00"];
+  if (!n.time && n.times?.[0]) n.time = n.times[0];
+  if (!n.time) n.time = DEFAULT_TIME;
   return data;
 }
 
@@ -36,10 +37,9 @@ export async function setNotificationSettings(
 ): Promise<NotificationSettings> {
   const current = await getSettings(lineId);
   const n = current.notification;
-  let times = settings.times ?? n.times ?? (n.time ? [n.time] : ["08:00"]);
-  times = times.slice(0, 3).filter((t) => /^\d{1,2}:\d{1,2}$/.test(t));
-  if (times.length === 0) times = ["08:00"];
-  const updated = { ...n, ...settings, times } as NotificationSettings;
+  let time = settings.time ?? n.time ?? DEFAULT_TIME;
+  if (!/^\d{1,2}:\d{1,2}$/.test(time)) time = DEFAULT_TIME;
+  const updated = { ...n, ...settings, time } as NotificationSettings;
   await setSettings(lineId, { notification: updated });
   return updated;
 }
@@ -51,24 +51,17 @@ export async function getUsersToNotify(nowHour: number, nowMinute: number): Prom
   for (const lineId of lineIds) {
     const s = await getSettings(lineId);
     const n = s?.notification;
-    const times = n?.times ?? (n?.time ? [n.time] : []);
-    if (n?.enabled && times.includes(timeStr)) {
+    const userTime = n?.time ?? DEFAULT_TIME;
+    if (n?.enabled && userTime === timeStr) {
       const dateStr = new Date(new Date().getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
-      const sentToday = n.lastSentDate === dateStr && (n.lastSentTimes ?? []).includes(timeStr);
-      if (!sentToday) result.push(lineId);
+      if (n.lastSentDate !== dateStr) result.push(lineId);
     }
   }
   return result;
 }
 
-export async function markNotificationSent(lineId: string, dateStr: string, timeStr: string): Promise<void> {
+export async function markNotificationSent(lineId: string, dateStr: string): Promise<void> {
   const current = await getSettings(lineId);
-  if (current.notification.lastSentDate !== dateStr) {
-    current.notification.lastSentDate = dateStr;
-    current.notification.lastSentTimes = [];
-  }
-  const sent = current.notification.lastSentTimes ?? [];
-  if (!sent.includes(timeStr)) sent.push(timeStr);
-  current.notification.lastSentTimes = sent;
+  current.notification.lastSentDate = dateStr;
   await setSettings(lineId, current);
 }
