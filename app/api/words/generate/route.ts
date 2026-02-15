@@ -39,38 +39,62 @@ export async function POST(request: NextRequest) {
   }
 
   const ai = new GoogleGenAI({ apiKey });
+  const prompt = `${SYSTEM_PROMPT}
 
+次の英単語の意味、例文、穴埋め形式の問題、その答えを生成してください：${word}`;
+
+  const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-flash-8b", "gemini-pro"] as const;
+
+  let lastError: unknown = null;
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
-      contents: `${SYSTEM_PROMPT}
+  for (const model of modelsToTry) {
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        contents: prompt,
+      });
 
-次の英単語の意味、例文、穴埋め形式の問題、その答えを生成してください：${word}`,
-    });
+      const content = response.text?.trim();
+      if (!content) continue;
 
-    const content = response.text?.trim();
-    if (!content) {
-      return NextResponse.json(
-        { error: "生成に失敗しました" },
-        { status: 500 }
-      );
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      const jsonStr = jsonMatch ? jsonMatch[0] : content;
+      const parsed = JSON.parse(jsonStr) as {
+        meaning?: string;
+        example?: string;
+        question?: string;
+        answer?: string;
+      };
+
+      return NextResponse.json({
+        meaning: String(parsed.meaning ?? "").trim(),
+        example: String(parsed.example ?? "").trim(),
+        question: String(parsed.question ?? "").trim(),
+        answer: String(parsed.answer ?? word).trim() || word,
+      });
+    } catch (err: unknown) {
+      const errMsg = err && typeof err === "object" && "message" in err ? String((err as { message?: unknown }).message) : "";
+      const isNotFound = (err && typeof err === "object" && "status" in err && (err as { status?: string }).status === "NOT_FOUND")
+        || errMsg.includes("not found") || errMsg.includes("NOT_FOUND");
+      if (isNotFound) {
+        lastError = err;
+        continue;
+      }
+      throw err;
     }
+  }
 
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    const jsonStr = jsonMatch ? jsonMatch[0] : content;
-    const parsed = JSON.parse(jsonStr) as {
-      meaning?: string;
-      example?: string;
-      question?: string;
-      answer?: string;
-    };
+  if (lastError) {
+    return NextResponse.json(
+      { error: "利用可能なモデルが見つかりません。Google AI Studioの設定を確認してください。" },
+      { status: 500 }
+    );
+  }
 
-    return NextResponse.json({
-      meaning: String(parsed.meaning ?? "").trim(),
-      example: String(parsed.example ?? "").trim(),
-      question: String(parsed.question ?? "").trim(),
-      answer: String(parsed.answer ?? word).trim() || word,
-    });
+  return NextResponse.json(
+    { error: "生成に失敗しました" },
+    { status: 500 }
+  );
   } catch (err: unknown) {
     console.error("Gemini generate error:", err);
     if (err instanceof SyntaxError) {
