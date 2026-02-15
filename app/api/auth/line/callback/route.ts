@@ -6,15 +6,21 @@ import {
   parseStateForVerifier,
 } from "@/lib/auth/line";
 
+function getBaseUrl(request: NextRequest): string {
+  const envUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (envUrl && envUrl.startsWith("http")) return envUrl.replace(/\/$/, "");
+  const proto = request.headers.get("x-forwarded-proto") || request.nextUrl.protocol.replace(":", "");
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || request.nextUrl.host;
+  return `${proto}://${host}`;
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get("code");
   const state = searchParams.get("state");
   const error = searchParams.get("error");
 
-  const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL ||
-    `${request.nextUrl.protocol}//${request.nextUrl.host}`;
+  const baseUrl = getBaseUrl(request);
   const redirectUri = `${baseUrl}/api/auth/line/callback`;
 
   if (error) {

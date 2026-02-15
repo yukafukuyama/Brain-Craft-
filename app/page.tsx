@@ -22,21 +22,25 @@ export default async function SplashPage({
         // パース失敗時はログイン画面を表示
       }
     }
-    // LINE設定あり：/login 経由で遷移（ブラウザがドメイン認識してから認証＝1回で成功しやすい）
+    // LINE設定あり：未ログインなら直接LINE認証へ（古いStateは /api/auth/line でクリアされる）
     if (process.env.LINE_CHANNEL_ID) {
-      redirect("/login");
+      redirect("/api/auth/line");
     }
   }
   const errorMessages: Record<string, string> = {
     config: "LINEログインの設定がありません。",
     invalid_state:
-      "ログインに失敗しました。LINEアプリ内で開いている場合は、右上「…」→「ブラウザで開く」でSafariやChromeで開き直してから、もう一度お試しください。",
+      "ログインに失敗しました。もう一度お試しください。LINEアプリ内の場合は「ブラウザで開く」でSafariやChromeを使ってください。",
     invalid_callback:
-      "認証に失敗しました。ブラウザで直接開くか、Cookieを有効にして再度お試しください。",
-    token_exchange: "トークン取得に失敗しました。しばらく待ってからもう一度お試しください。",
-    ACCESS_DENIED: "ログインがキャンセルされました。もう一度お試しください。",
+      "認証に失敗しました。Cookieを有効にして、もう一度お試しください。",
+    token_exchange:
+      "トークン取得に失敗しました。コールバックURLがLINE Developersに正しく登録されているか確認してください。",
+    ACCESS_DENIED: "ログインがキャンセルされました。",
+    LOGIN_REQUIRED: "LINEにログインしてから、もう一度お試しください。",
+    INTERACTION_REQUIRED: "認証が必要です。もう一度お試しください。",
+    INVALID_REQUEST: "リクエストに問題があります。設定を確認してください。",
   };
-  const errorMsg = params.error ? errorMessages[params.error] || "エラーが発生しました。" : null;
+  const errorMsg = params.error ? errorMessages[params.error] || "ログインできませんでした。" : null;
   return (
     <main className="min-h-screen flex flex-col items-center justify-between px-6 py-12 bg-white">
       <div className="flex-1 flex flex-col items-center justify-center w-full max-w-sm">

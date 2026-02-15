@@ -27,7 +27,7 @@ export function createStateWithVerifier(codeVerifier: string): string {
 
 export function parseStateForVerifier(state: string): string | null {
   if (!state || typeof state !== "string") return null;
-  const s = state.replace(/\s/g, ""); // URLパラメータで + → 空格 になる場合の対策
+  const s = state.replace(/\s/g, "");
   try {
     const payload = JSON.parse(
       Buffer.from(s, "base64url").toString("utf-8")
@@ -53,7 +53,6 @@ export function buildAuthUrl(params: {
     scope: "profile openid",
     code_challenge: codeChallenge,
     code_challenge_method: "S256",
-    max_age: "0",
   });
   return `${LINE_AUTH_URL}?${searchParams.toString()}`;
 }

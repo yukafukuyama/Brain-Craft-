@@ -10,8 +10,8 @@ import { Logo } from "@/components/Logo";
 export default function LoginPage() {
   useEffect(() => {
     const t = setTimeout(() => {
-      window.location.href = "/api/auth/line";
-    }, 400);
+      window.location.replace("/api/auth/line?n=" + Date.now());
+    }, 200);
     return () => clearTimeout(t);
   }, []);
 
