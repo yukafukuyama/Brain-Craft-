@@ -76,6 +76,7 @@ export async function POST(request: NextRequest) {
         example_jt?: string;
         quiz?: string;
         quiz_jt?: string;
+        question?: string;
         answer?: string;
       };
 
