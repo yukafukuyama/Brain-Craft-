@@ -57,21 +57,9 @@ export default function HomePage() {
     <div className="min-h-screen bg-white pb-20">
       {/* Header */}
       <header className="px-4 pt-6 pb-4">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">BrainCraft</h1>
-            <p className="text-sm text-gray-500">中々覚えられない単語を、日常の一部に！</p>
-          </div>
-          <Link
-            href="/words"
-            className="p-2 text-blue-600"
-            aria-label="登録一覧"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-            </svg>
-          </Link>
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">BrainCraft</h1>
+          <p className="text-sm text-gray-500">中々覚えられない単語を、日常の一部に！</p>
         </div>
       </header>
 
@@ -118,13 +106,6 @@ export default function HomePage() {
           >
             {loading ? "登録中..." : "単語登録"}
           </button>
-
-          <Link
-            href="/words"
-            className="w-full py-4 border-2 border-blue-600 text-blue-600 font-medium rounded-xl flex items-center justify-center hover:bg-blue-50 transition-colors"
-          >
-            登録一覧
-          </Link>
 
           <Link
             href="/settings"
