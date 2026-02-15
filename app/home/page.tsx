@@ -158,7 +158,7 @@ export default function HomePage() {
             <div className="flex gap-2">
               <input
                 type="text"
-                placeholder="例: Resilience"
+                placeholder="例: Resilience または get back to（イディオム）"
                 value={word}
                 onChange={(e) => setWord(e.target.value)}
                 className="flex-1 px-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-blue-500"

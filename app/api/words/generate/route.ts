@@ -2,6 +2,52 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { GoogleGenAI } from "@google/genai";
 
+const IDIOM_EXAMPLE = `例：「get back to」の場合は
+{
+  "meaning": "改めて連絡し直す",
+  "breakdown": "get（得る）＋ back（戻る）＋ to（〜へ）",
+  "reaction": "「返答が自分のところに戻ってくる」というイメージから、単なる返事ではなく「改めてこちらから連絡し直す」というニュアンスになります。",
+  "usage": "ビジネスメールや会議のフォローアップでよく使われます。「I'll get back to you.」は「後で改めて連絡します」の意味。",
+  "example": "I'll get back to you with the details by Friday.",
+  "example_jt": "金曜日までに詳細を改めてお伝えします。"
+}`;
+
+function buildIdiomPrompt(generateQuiz: boolean, generateAnswer: boolean): string {
+  const jsonFields = [
+    '"meaning": "イディオムの意味（日本語、簡潔に）"',
+    '"breakdown": "構成要素の分解（各単語の本来の意味を＋で繋ぐ。例：get（得る）＋ back（戻る）＋ to（〜へ））"',
+    '"reaction": "化学反応：組み合わさることでなぜ今の意味になるかを、イメージで解説"',
+    '"usage": "使い分け：ビジネス、日常会話など、どんな場面で使われるのが自然か"',
+    '"example": "例文（イディオムのニュアンスが一番伝わるシチュエーション）"',
+    '"example_jt": "例文の日本語訳"',
+  ];
+  if (generateQuiz) {
+    jsonFields.push('"quiz": "穴埋め問題（対象言語。空欄は ___ で示す）"');
+    jsonFields.push('"quiz_jt": "穴埋め問題の日本語訳"');
+  }
+  if (generateAnswer) {
+    jsonFields.push('"answer": "穴埋めの答え（入力されたイディオムそのもの）"');
+  }
+
+  return `イディオム（慣用句・句動詞）学習用のデータを生成してください。
+入力は2語以上のフレーズです。イディオムとして特別に解析してください。
+
+【必須項目】
+1. 構成要素の分解：それぞれの単語の本来の意味を説明
+2. 化学反応（意味の変化）：組み合わさることで、なぜ今の意味になるかを「イメージ」で解説
+3. 使い分け：ビジネス、日常会話など、どんな場面で使うのが自然か明記
+4. 例文：イディオムのニュアンスが一番伝わるシチュエーションで作成
+
+【出力フォーマット】
+以下のJSON形式のみで返してください。他のテキストは含めないでください。
+
+${IDIOM_EXAMPLE}
+
+{
+  ${jsonFields.join(",\n  ")}
+}`;
+}
+
 function buildSystemPrompt(generateQuiz: boolean, generateAnswer: boolean): string {
   const base = `単語学習アプリ用のデータを生成してください。
 
@@ -69,11 +115,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "単語を入力してください" }, { status: 400 });
   }
 
-  const systemPrompt = buildSystemPrompt(generateQuiz, generateAnswer);
-  const parts = ["意味", "例文"];
-  if (generateQuiz) parts.push("穴埋め形式の問題");
-  if (generateAnswer) parts.push("その答え");
-  const userPrompt = `次の単語の${parts.join("、")}を生成してください：${word}`;
+  const isIdiom = word.includes(" ");
+  const systemPrompt = isIdiom
+    ? buildIdiomPrompt(generateQuiz, generateAnswer)
+    : buildSystemPrompt(generateQuiz, generateAnswer);
+  const userPrompt = isIdiom
+    ? `次のイディオムのデータを生成してください：${word}`
+    : `次の単語の意味、例文${generateQuiz ? "、穴埋め形式の問題" : ""}${generateAnswer ? "、その答え" : ""}を生成してください：${word}`;
 
   const ai = new GoogleGenAI({ apiKey });
   const prompt = `${systemPrompt}
@@ -100,6 +148,9 @@ ${userPrompt}`;
         meaning?: string;
         example?: string;
         example_jt?: string;
+        breakdown?: string;
+        reaction?: string;
+        usage?: string;
         quiz?: string;
         quiz_jt?: string;
         question?: string;
@@ -112,9 +163,28 @@ ${userPrompt}`;
       const qJt = generateQuiz ? String(parsed.quiz_jt ?? "").trim() : "";
       const ans = generateAnswer ? (String(parsed.answer ?? word).trim() || word) : "";
 
+      let exampleOut: string;
+      if (isIdiom) {
+        const parts: string[] = [];
+        if (ex) parts.push(exJt ? `${ex}\n（訳）${exJt}` : ex);
+        const breakdown = String(parsed.breakdown ?? "").trim();
+        const reaction = String(parsed.reaction ?? "").trim();
+        const usage = String(parsed.usage ?? "").trim();
+        if (breakdown || reaction || usage) {
+          const explanation: string[] = [];
+          if (breakdown) explanation.push(breakdown);
+          if (reaction) explanation.push(reaction);
+          if (usage) explanation.push(`【使い分け】${usage}`);
+          parts.push(explanation.join("\n\n"));
+        }
+        exampleOut = parts.join("\n\n");
+      } else {
+        exampleOut = exJt ? `${ex}\n（訳）${exJt}` : ex;
+      }
+
       return NextResponse.json({
         meaning: String(parsed.meaning ?? "").trim(),
-        example: exJt ? `${ex}\n（訳）${exJt}` : ex,
+        example: exampleOut,
         question: qJt ? `${q}\n（訳）${qJt}` : q,
         answer: ans,
       });
