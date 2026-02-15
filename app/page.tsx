@@ -92,7 +92,10 @@ export default async function SplashPage({
           </summary>
           <ul className="mt-2 text-xs text-gray-600 space-y-1 pl-4 list-disc">
             <li>
-              <strong>エラーになる場合</strong>：LINEアプリ内で開いていると失敗しやすいです。右上「…」→「ブラウザで開く」でSafariやChromeを選び、再度お試しください
+              <strong>1回でログインできない場合</strong>：何度かログインボタンを押してお試しください
+            </li>
+            <li>
+              エラーになる場合：LINEアプリ内で開いていると失敗しやすいです。右上「…」→「ブラウザで開く」でSafariやChromeを選んでください
             </li>
             <li>ブラウザのCookieを有効にしてください</li>
             <li>「Login to Vercel」と出る→管理者に連絡してください</li>
