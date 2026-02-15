@@ -41,16 +41,13 @@ export async function GET(request: NextRequest) {
       continue;
     }
 
-    const recent = words.slice(0, 5);
-    const blocks = recent.map((w) => {
+    const blocks = words.map((w) => {
       const parts = [`【${w.word}】`];
       if (w.meaning) parts.push(`意味: ${w.meaning}`);
       if (w.example) parts.push(`例文: ${w.example}`);
       return parts.join("\n");
     });
-    const text =
-      blocks.join("\n\n") +
-      (words.length > 5 ? `\n\n他 ${words.length - 5} 件...` : "");
+    const text = blocks.join("\n\n");
 
     const ok = await sendPushMessage(channelAccessToken, lineId, text);
     results.push({ lineId, ok });
