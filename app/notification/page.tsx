@@ -147,7 +147,7 @@ export default function NotificationPage() {
                   <div className="space-y-2">
                     {[0, 1, 2, 3, 4].map((i) => (
                       <div key={i} className="flex items-center gap-2">
-                        <div className="relative w-28 min-w-0 shrink-0">
+                        <div className="relative flex-1 min-w-0">
                           <input
                             ref={(el) => { timeInputRefs.current[i] = el; }}
                             type="time"
