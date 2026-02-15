@@ -149,7 +149,7 @@ export function WeeklyProgressCard() {
               domain={[0, 50]}
             />
             <Tooltip
-              formatter={(value: number) => [`${value} 問`, "解答数"]}
+              formatter={(value: number | undefined) => [`${value ?? 0} 問`, "解答数"]}
               labelFormatter={(_, payload) => {
                 const p = payload?.[0]?.payload as ChartDataPoint | undefined;
                 if (!p?.date) return "";
