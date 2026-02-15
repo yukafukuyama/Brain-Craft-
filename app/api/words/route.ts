@@ -17,5 +17,7 @@ export async function GET() {
   }
 
   const words = await getWords(session.lineId);
-  return NextResponse.json({ words });
+  return NextResponse.json({ words }, {
+    headers: { "Cache-Control": "no-store, max-age=0" },
+  });
 }

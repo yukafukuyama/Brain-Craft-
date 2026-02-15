@@ -22,5 +22,7 @@ export async function GET() {
     name,
     isNotificationEnabled: notifSettings[name] ?? true,
   }));
-  return NextResponse.json({ lists });
+  return NextResponse.json({ lists }, {
+    headers: { "Cache-Control": "no-store, max-age=0" },
+  });
 }

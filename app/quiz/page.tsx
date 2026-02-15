@@ -15,7 +15,7 @@ export default function QuizPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/lists")
+    fetch("/api/lists", { cache: "no-store" })
       .then((res) => {
         if (res.status === 401) {
           router.replace("/");
@@ -28,7 +28,7 @@ export default function QuizPage() {
   }, [router]);
 
   useEffect(() => {
-    fetch("/api/words")
+    fetch("/api/words", { cache: "no-store" })
       .then((res) => {
         if (res.status === 401) {
           router.replace("/");
