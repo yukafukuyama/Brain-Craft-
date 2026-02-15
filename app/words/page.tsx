@@ -158,16 +158,14 @@ function WordsContent() {
                 className="flex-1 min-w-0 cursor-pointer"
                 onClick={() => setSelectedWord(item)}
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap w-full">
                   <span className="font-bold text-gray-900">{item.word}</span>
                   {(item.listName?.trim() || "未分類") !== "未分類" && (
                     <span className="text-xs px-2 py-0.5 bg-gray-200 rounded text-gray-600">
                       {item.listName}
                     </span>
                   )}
-                  <span
-                    onClick={(e) => e.stopPropagation()}
-                  >
+                  <span onClick={(e) => e.stopPropagation()} className="ml-auto shrink-0">
                     <Link
                       href={`/words/${item.id}/edit`}
                       className="text-blue-600 p-1 inline-block"
