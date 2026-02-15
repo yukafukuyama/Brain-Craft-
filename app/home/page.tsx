@@ -190,9 +190,6 @@ export default function HomePage() {
 
           {LINE_ADD_FRIEND_URL ? (
             <div className="space-y-2">
-              <p className="text-sm text-gray-600">
-                友だち追加すると、単語登録時にLINEへ通知が届き、設定した時刻に復習通知が送られます。
-              </p>
               <a
                 href={LINE_ADD_FRIEND_URL}
                 target="_blank"
@@ -210,6 +207,9 @@ export default function HomePage() {
                 </svg>
                 LINE通知の登録（友だち追加）
               </a>
+              <p className="text-sm text-gray-600">
+                友だち追加すると、単語登録時にLINEへ通知が届き、設定した時刻に復習通知が送られます。
+              </p>
             </div>
           ) : (
             <p className="text-sm text-gray-500 text-center py-2">

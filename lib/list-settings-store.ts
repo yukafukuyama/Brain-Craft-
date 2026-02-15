@@ -48,6 +48,33 @@ export async function setListNotificationEnabled(
   await saveSettings(data);
 }
 
+/** リスト名変更時に設定を移行 */
+export async function renameListSettings(
+  lineId: string,
+  oldName: string,
+  newName: string
+): Promise<void> {
+  const data = await loadSettings();
+  const user = data[lineId];
+  if (!user) return;
+  const oldSettings = user[oldName];
+  if (oldSettings) {
+    if (!data[lineId]) data[lineId] = {};
+    data[lineId][newName] = oldSettings;
+    delete data[lineId][oldName];
+    await saveSettings(data);
+  }
+}
+
+/** リスト削除時に設定を削除 */
+export async function deleteListSettings(lineId: string, listName: string): Promise<void> {
+  const data = await loadSettings();
+  if (data[lineId]?.[listName]) {
+    delete data[lineId][listName];
+    await saveSettings(data);
+  }
+}
+
 /** 複数リストの通知設定を一括取得 */
 export async function getListNotificationSettings(
   lineId: string,

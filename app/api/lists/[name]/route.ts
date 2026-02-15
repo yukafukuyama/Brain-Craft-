@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { deleteList } from "@/lib/words-store";
-import { setListNotificationEnabled } from "@/lib/list-settings-store";
+import { deleteListAndWords, renameList } from "@/lib/words-store";
+import {
+  setListNotificationEnabled,
+  renameListSettings,
+  deleteListSettings,
+} from "@/lib/list-settings-store";
 import { DEFAULT_LIST_NAME } from "@/lib/words";
 
 export async function PATCH(
@@ -25,12 +29,29 @@ export async function PATCH(
 
   const body = await request.json().catch(() => ({}));
   const enabled = body.enabled ?? body.isNotificationEnabled;
-  if (typeof enabled !== "boolean") {
-    return NextResponse.json({ error: "enabled を true/false で指定してください" }, { status: 400 });
+  const newName = typeof body.newName === "string" ? body.newName.trim() : undefined;
+
+  if (newName !== undefined) {
+    if (!newName || newName === decodedName) {
+      return NextResponse.json({ error: "新しいリスト名を入力してください" }, { status: 400 });
+    }
+    if (newName === DEFAULT_LIST_NAME) {
+      return NextResponse.json({ error: "そのリスト名は使用できません" }, { status: 400 });
+    }
+    const ok = await renameList(session.lineId, decodedName, newName);
+    if (ok) await renameListSettings(session.lineId, decodedName, newName);
   }
 
-  await setListNotificationEnabled(session.lineId, decodedName, enabled);
-  return NextResponse.json({ success: true, isNotificationEnabled: enabled });
+  if (typeof enabled === "boolean") {
+    const targetName = newName ?? decodedName;
+    await setListNotificationEnabled(session.lineId, targetName, enabled);
+  }
+
+  return NextResponse.json({
+    success: true,
+    isNotificationEnabled: typeof enabled === "boolean" ? enabled : undefined,
+    newName: newName ?? undefined,
+  });
 }
 
 export async function DELETE(
@@ -56,6 +77,7 @@ export async function DELETE(
     return NextResponse.json({ error: "セッションが無効です" }, { status: 401 });
   }
 
-  const count = await deleteList(session.lineId, decodedName);
-  return NextResponse.json({ success: true, movedCount: count });
+  const count = await deleteListAndWords(session.lineId, decodedName);
+  await deleteListSettings(session.lineId, decodedName);
+  return NextResponse.json({ success: true, deletedCount: count });
 }

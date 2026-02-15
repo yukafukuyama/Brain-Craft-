@@ -85,6 +85,7 @@ export async function getListNames(lineId: string): Promise<string[]> {
   return Array.from(names).sort((a, b) => (a === DEFAULT_LIST_NAME ? -1 : a.localeCompare(b)));
 }
 
+/** リストを削除：中の単語を未分類へ移動 */
 export async function deleteList(lineId: string, listName: string): Promise<number> {
   if (listName === DEFAULT_LIST_NAME) return 0;
   const data = await loadWords();
@@ -98,4 +99,40 @@ export async function deleteList(lineId: string, listName: string): Promise<numb
   }
   if (count > 0) await saveWords(data);
   return count;
+}
+
+/** リストを削除：中の単語もすべて削除 */
+export async function deleteListAndWords(lineId: string, listName: string): Promise<number> {
+  if (listName === DEFAULT_LIST_NAME) return 0;
+  const data = await loadWords();
+  const list = data[lineId] ?? [];
+  const filtered = list.filter((w) => (w.listName?.trim() || DEFAULT_LIST_NAME) !== listName);
+  const count = list.length - filtered.length;
+  if (count > 0) {
+    data[lineId] = filtered;
+    await saveWords(data);
+  }
+  return count;
+}
+
+/** リスト名を変更 */
+export async function renameList(
+  lineId: string,
+  oldName: string,
+  newName: string
+): Promise<boolean> {
+  if (oldName === DEFAULT_LIST_NAME || newName === DEFAULT_LIST_NAME) return false;
+  const trimmed = newName.trim();
+  if (!trimmed || trimmed === oldName) return false;
+  const data = await loadWords();
+  const list = data[lineId] ?? [];
+  let changed = false;
+  for (const w of list) {
+    if ((w.listName?.trim() || DEFAULT_LIST_NAME) === oldName) {
+      w.listName = trimmed;
+      changed = true;
+    }
+  }
+  if (changed) await saveWords(data);
+  return changed;
 }
