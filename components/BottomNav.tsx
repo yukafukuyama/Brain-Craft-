@@ -19,8 +19,8 @@ const navItems3: NavItem[] = [
 const navItems4: NavItem[] = [
   { href: "/home", label: "ホーム", icon: "home" },
   { href: "/words", label: "単語帳", icon: "book" },
-  { href: "/notification", label: "通知", icon: "bell" },
   { href: "/learned", label: "習得済み", icon: "check" },
+  { href: "/notification", label: "通知", icon: "bell" },
   { href: "/settings", label: "設定", icon: "settings" },
 ];
 
