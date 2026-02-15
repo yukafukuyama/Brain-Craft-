@@ -68,20 +68,32 @@ export default function WordsPage() {
       {/* Header */}
       <header className="px-4 pt-6 pb-4 flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-900">登録単語</h1>
-        <Link
-          href="/lists"
-          className="p-2 text-blue-600"
-          aria-label="リスト別の通知ON/OFF"
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="8" y1="6" x2="21" y2="6" />
-            <line x1="8" y1="12" x2="21" y2="12" />
-            <line x1="8" y1="18" x2="21" y2="18" />
-            <circle cx="4" cy="6" r="1.5" />
-            <circle cx="4" cy="12" r="1.5" />
-            <circle cx="4" cy="18" r="1.5" />
-          </svg>
-        </Link>
+        <div className="flex items-center gap-1">
+          <Link
+            href="/home"
+            className="p-2 text-blue-600"
+            aria-label="単語登録"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </Link>
+          <Link
+            href="/lists"
+            className="p-2 text-blue-600"
+            aria-label="リスト別の通知ON/OFF"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="8" y1="6" x2="21" y2="6" />
+              <line x1="8" y1="12" x2="21" y2="12" />
+              <line x1="8" y1="18" x2="21" y2="18" />
+              <circle cx="4" cy="6" r="1.5" />
+              <circle cx="4" cy="12" r="1.5" />
+              <circle cx="4" cy="18" r="1.5" />
+            </svg>
+          </Link>
+        </div>
       </header>
 
       {/* List filter & Search */}
