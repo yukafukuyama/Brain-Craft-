@@ -6,6 +6,8 @@ import Link from "next/link";
 import { saveQuizProgress } from "@/lib/quiz-progress";
 import { WeeklyProgressCard } from "@/components/WeeklyProgressCard";
 
+const QUIZ_SESSION_SIZE = 10;
+
 type QuizWord = {
   id: string;
   word: string;
@@ -33,6 +35,7 @@ function QuizTestContent() {
   const [quizWords, setQuizWords] = useState<QuizWord[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
+  const [showChart, setShowChart] = useState(false);
 
   const loadWords = useCallback(() => {
     setStatus("loading");
@@ -62,7 +65,8 @@ function QuizTestContent() {
           setStatus("no-words");
           return;
         }
-        setQuizWords(shuffle(filtered as QuizWord[]));
+        const shuffled = shuffle(filtered as QuizWord[]);
+        setQuizWords(shuffled.slice(0, QUIZ_SESSION_SIZE));
         setStatus("quiz");
         setCurrentIndex(0);
         setRevealed(false);
@@ -73,6 +77,16 @@ function QuizTestContent() {
   useEffect(() => {
     loadWords();
   }, [loadWords]);
+
+  useEffect(() => {
+    if (status === "done") {
+      setShowChart(false);
+      const timer = setTimeout(() => setShowChart(true), 400);
+      return () => clearTimeout(timer);
+    } else {
+      setShowChart(false);
+    }
+  }, [status]);
 
   const currentWord = quizWords[currentIndex];
   const isLastCard = currentIndex === quizWords.length - 1;
@@ -193,13 +207,26 @@ function QuizTestContent() {
           <div className="text-center py-8">
             <h2 className="text-2xl font-bold text-gray-900">お疲れ様でした！</h2>
             <p className="text-gray-600 mt-2">
-              {total} 枚のカードを復習しました
+              {total} 問復習しました
             </p>
           </div>
-          <WeeklyProgressCard />
+          <div
+            className={`transition-all duration-700 ease-out ${
+              showChart ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+            }`}
+          >
+            <WeeklyProgressCard />
+          </div>
+          <button
+            type="button"
+            onClick={loadWords}
+            className="w-full py-4 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl transition-colors"
+          >
+            もう10問挑戦する
+          </button>
           <Link
             href="/quiz"
-            className="block w-full py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 text-center"
+            className="block w-full py-3 text-center text-gray-600 hover:text-gray-800 text-sm"
           >
             リスト一覧に戻る
           </Link>

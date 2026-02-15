@@ -4,6 +4,7 @@ import { getWords } from "@/lib/words-store";
 import { getListNotificationSettings } from "@/lib/list-settings-store";
 import { getNotificationSettings } from "@/lib/settings-store";
 import { sendPushMessage } from "@/lib/line-messaging";
+import { buildNotificationMessage } from "@/lib/notification-message";
 
 export async function POST() {
   const cookieStore = await cookies();
@@ -43,15 +44,7 @@ export async function POST() {
     return NextResponse.json({ error: msg }, { status: 400 });
   }
 
-  const blocks = words.map((w) => {
-    const parts = [`【${w.word}】`];
-    if (w.meaning) parts.push(`意味: ${w.meaning}`);
-    if (w.example) parts.push(`例文: ${w.example}`);
-    if (w.question) parts.push(`問題: ${w.question}`);
-    if (w.answer) parts.push(`答え: ${w.answer}`);
-    return parts.join("\n");
-  });
-  const text = blocks.join("\n\n");
+  const text = buildNotificationMessage(words);
 
   const ok = await sendPushMessage(channelAccessToken, session.lineId, text);
   if (!ok) {
