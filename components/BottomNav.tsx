@@ -19,7 +19,7 @@ const navItems3: NavItem[] = [
 const navItems4: NavItem[] = [
   { href: "/home", label: "ホーム", icon: "home" },
   { href: "/words", label: "単語帳", icon: "book" },
-  { href: "/learned", label: "習得済み", icon: "check" },
+  { href: "/quiz", label: "問題", icon: "quiz" },
   { href: "/notification", label: "通知", icon: "bell" },
   { href: "/settings", label: "設定", icon: "settings" },
 ];
@@ -31,7 +31,7 @@ export function BottomNav({ variant = "3" }: { variant?: "3" | "4" }) {
   const isActive = (href: string) => {
     if (href === "/home") return pathname === "/home";
     if (href === "/notification") return pathname === "/notification";
-    if (href === "/learned") return pathname === "/learned";
+    if (href === "/quiz") return pathname.startsWith("/quiz");
     return pathname.startsWith(href);
   };
 
