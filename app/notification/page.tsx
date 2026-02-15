@@ -176,11 +176,9 @@ export default function NotificationPage() {
                           type="button"
                           onClick={() => handleClearSlot(i)}
                           aria-label={`スロット${i + 1}をクリア`}
-                          className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+                          className="flex-shrink-0 min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center rounded-lg border border-gray-300 bg-gray-50 text-gray-600 active:bg-gray-200 transition-colors touch-manipulation"
                         >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M18 6L6 18M6 6l12 12" />
-                          </svg>
+                          <span className="text-xl font-light leading-none" aria-hidden>×</span>
                         </button>
                       </div>
                     ))}
