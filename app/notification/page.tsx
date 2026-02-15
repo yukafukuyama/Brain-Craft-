@@ -144,10 +144,10 @@ export default function NotificationPage() {
                   </span>
                   <p className="text-xs text-gray-500">数字をタップして時刻を変更。未選択は「--:--」、×でクリア</p>
 
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {[0, 1, 2, 3, 4].map((i) => (
-                      <div key={i} className="flex items-center gap-2">
-                        <div className="relative flex-1 min-w-0">
+                      <div key={i} className="flex items-center gap-3 w-full min-w-0">
+                        <div className="relative flex-1 min-w-0 overflow-hidden">
                           <input
                             ref={(el) => { timeInputRefs.current[i] = el; }}
                             type="time"
@@ -156,7 +156,7 @@ export default function NotificationPage() {
                             onClick={() => {
                               timeInputRefs.current[i]?.showPicker?.();
                             }}
-                            className={`w-full px-4 py-2.5 rounded-lg border text-base min-h-[42px] touch-manipulation ${
+                            className={`w-full max-w-full px-4 py-2.5 rounded-lg border text-base min-h-[42px] touch-manipulation box-border ${
                               notificationTimes[i]
                                 ? "bg-white border-gray-200"
                                 : "bg-white border-dashed border-gray-300"
@@ -179,9 +179,11 @@ export default function NotificationPage() {
                           type="button"
                           onClick={() => handleClearSlot(i)}
                           aria-label={`スロット${i + 1}をクリア`}
-                          className="flex-shrink-0 min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center rounded-lg border border-gray-300 bg-gray-50 text-gray-600 active:bg-gray-200 transition-colors touch-manipulation"
+                          className="flex-shrink-0 min-w-[40px] min-h-[40px] w-10 h-10 p-2 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 active:bg-gray-300 transition-colors touch-manipulation"
                         >
-                          <span className="text-xl font-light leading-none" aria-hidden>×</span>
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                            <path d="M18 6L6 18M6 6l12 12" />
+                          </svg>
                         </button>
                       </div>
                     ))}
