@@ -142,18 +142,29 @@ export default function NotificationPage() {
                   <span className="block text-sm font-medium text-gray-700">
                     送信時刻（最大5つ・日本時間）
                   </span>
-                  <p className="text-xs text-gray-500">タップして時刻を入力。未選択は「--:--」</p>
+                  <p className="text-xs text-gray-500">数字をタップして時刻を変更。未選択は「--:--」、×でクリア</p>
 
                   <div className="space-y-2">
                     {[0, 1, 2, 3, 4].map((i) => (
                       <div key={i} className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleClearSlot(i)}
+                          aria-label={`スロット${i + 1}をクリア`}
+                          className="flex-shrink-0 min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center rounded-lg border border-gray-300 bg-gray-50 text-gray-600 active:bg-gray-200 transition-colors touch-manipulation"
+                        >
+                          <span className="text-xl font-light leading-none" aria-hidden>×</span>
+                        </button>
                         <div className="relative flex-1 min-w-0">
                           <input
                             ref={(el) => { timeInputRefs.current[i] = el; }}
                             type="time"
                             value={notificationTimes[i] ?? ""}
                             onChange={(e) => handleTimeChange(i, e.target.value)}
-                            className={`w-full px-4 py-2.5 rounded-lg border text-base min-h-[42px] ${
+                            onClick={() => {
+                              timeInputRefs.current[i]?.showPicker?.();
+                            }}
+                            className={`w-full px-4 py-2.5 rounded-lg border text-base min-h-[42px] touch-manipulation ${
                               notificationTimes[i]
                                 ? "bg-white border-gray-200"
                                 : "bg-white border-dashed border-gray-300"
@@ -166,20 +177,12 @@ export default function NotificationPage() {
                                 timeInputRefs.current[i]?.showPicker?.();
                                 timeInputRefs.current[i]?.focus();
                               }}
-                              className="absolute inset-0 w-full flex items-center justify-center text-gray-400 text-base cursor-pointer rounded-lg border-0 bg-transparent"
+                              className="absolute inset-0 w-full flex items-center justify-center text-gray-400 text-base cursor-pointer rounded-lg border-0 bg-transparent touch-manipulation"
                             >
                               --:--
                             </button>
                           )}
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleClearSlot(i)}
-                          aria-label={`スロット${i + 1}をクリア`}
-                          className="flex-shrink-0 min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center rounded-lg border border-gray-300 bg-gray-50 text-gray-600 active:bg-gray-200 transition-colors touch-manipulation"
-                        >
-                          <span className="text-xl font-light leading-none" aria-hidden>×</span>
-                        </button>
                       </div>
                     ))}
                   </div>
