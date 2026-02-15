@@ -1,18 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function AuthSuccessPage() {
   const router = useRouter();
 
-  useEffect(() => {
-    const t = setTimeout(() => {
-      router.replace("/home");
-    }, 7000);
-    return () => clearTimeout(t);
-  }, [router]);
+  const goHome = () => router.replace("/home");
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -20,7 +14,7 @@ export default function AuthSuccessPage() {
         <h1 className="text-lg font-bold text-blue-600 tracking-wide">BRAINCRAFT</h1>
         <button
           type="button"
-          onClick={() => router.replace("/home")}
+          onClick={goHome}
           className="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
           aria-label="閉じる"
         >
@@ -71,7 +65,7 @@ export default function AuthSuccessPage() {
             </svg>
           </a>
 
-          <div id="add-to-home" className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div id="add-to-home" className="grid grid-cols-2 gap-4">
             <div className="p-4 bg-gray-100 rounded-xl">
               <div className="flex items-center gap-2 mb-4">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-gray-500">
@@ -140,9 +134,13 @@ export default function AuthSuccessPage() {
           </div>
         </div>
 
-        <p className="mt-8 text-xs text-gray-400">
-          7秒後に自動でホームへ移動します
-        </p>
+        <button
+          type="button"
+          onClick={goHome}
+          className="mt-8 w-full py-4 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors"
+        >
+          ホームへ進む
+        </button>
       </main>
     </div>
   );
