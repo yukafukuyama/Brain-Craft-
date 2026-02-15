@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 type NavItem = {
   href: string;
   label: string;
-  icon: "home" | "book" | "bell" | "check" | "settings";
+  icon: "home" | "book" | "bell" | "check" | "settings" | "quiz";
 };
 
 const navItems3: NavItem[] = [
@@ -19,7 +19,7 @@ const navItems3: NavItem[] = [
 const navItems4: NavItem[] = [
   { href: "/home", label: "ホーム", icon: "home" },
   { href: "/words", label: "単語帳", icon: "book" },
-  { href: "/learned", label: "習得済み", icon: "check" },
+  { href: "/quiz", label: "問題", icon: "quiz" },
   { href: "/notification", label: "通知", icon: "bell" },
   { href: "/settings", label: "設定", icon: "settings" },
 ];
@@ -31,6 +31,7 @@ export function BottomNav({ variant = "3" }: { variant?: "3" | "4" }) {
   const isActive = (href: string) => {
     if (href === "/home") return pathname === "/home";
     if (href === "/notification") return pathname === "/notification";
+    if (href === "/quiz") return pathname.startsWith("/quiz");
     return pathname.startsWith(href);
   };
 
@@ -84,7 +85,14 @@ function NavIcon({ type, active }: { type: NavItem["icon"]; active: boolean }) {
           <polyline points="22 4 12 14.01 9 11.01" />
         </svg>
       );
-      case "bell":
+    case "quiz":
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
+          <path d="M12 14l9-5-9-5-9 5 9 5z" />
+          <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+        </svg>
+      );
+    case "bell":
         return (
           <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
