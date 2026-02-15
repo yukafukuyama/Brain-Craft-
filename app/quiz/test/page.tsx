@@ -226,8 +226,11 @@ function QuizTestContent() {
           </button>
           <Link
             href="/quiz"
-            className="block w-full py-3 text-center text-gray-600 hover:text-gray-800 text-sm"
+            className="flex items-center justify-center gap-2 w-full py-4 border-2 border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-colors"
           >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
             リスト一覧に戻る
           </Link>
         </div>
