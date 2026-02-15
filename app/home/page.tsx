@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { BottomNav } from "@/components/BottomNav";
 import { useLanguage } from "@/components/LanguageProvider";
 
@@ -123,8 +124,8 @@ export default function HomePage() {
       <header className="px-4 pt-6 pb-4">
         <div>
           <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <Image src="/logo.png" alt="Brain Push" width={32} height={32} className="rounded" />
             <span>{t("home.title")}</span>
-            <span className="text-2xl">🧠</span>
           </h1>
           <p className="text-sm text-gray-500">{t("home.tagline")}</p>
         </div>

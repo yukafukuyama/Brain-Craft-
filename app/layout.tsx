@@ -4,8 +4,8 @@ import { LanguageProvider } from "@/components/LanguageProvider";
 
 export const metadata: Metadata = {
   title: {
-    default: "BrainCraft - 学習",
-    template: "%s | BrainCraft",
+    default: "Brain Push - 学習",
+    template: "%s | Brain Push",
   },
   description: "覚えられない単語を、日常の一部に！",
   icons: [
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "BrainCraft",
+    title: "Brain Push",
   },
   manifest: "/manifest.json",
 };

@@ -1,6 +1,6 @@
 {
-  "name": "BrainCraft",
-  "short_name": "BrainCraft",
+  "name": "Brain Push",
+  "short_name": "Brain Push",
   "description": "覚えられない単語を、日常の一部に！",
   "start_url": "/",
   "display": "standalone",

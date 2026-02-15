@@ -4,7 +4,7 @@ export function Logo({ size = 80, className = "" }: { size?: number; className?:
   return (
     <Image
       src="/logo.png"
-      alt="BrainCraft"
+      alt="Brain Push"
       width={size}
       height={size}
       className={className}

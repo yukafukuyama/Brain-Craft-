@@ -50,8 +50,7 @@ export default async function SplashPage({
         <div className="flex flex-col items-center text-center">
           <Logo size={160} className="mb-4" />
           <h1 className="text-5xl font-bold text-gray-800 flex items-center justify-center gap-3">
-            <span>BrainCraft</span>
-            <span>🧠</span>
+            <span>Brain Push</span>
           </h1>
           <p className="text-sm text-gray-500 mt-1">学習</p>
         </div>
@@ -124,7 +123,7 @@ export default async function SplashPage({
           <Link href="#" className="hover:text-gray-700">利用規約</Link>
           <Link href="#" className="hover:text-gray-700">プライバシーポリシー</Link>
         </div>
-        <p className="text-xs text-gray-400">© 2024 BRAINCRAFT</p>
+        <p className="text-xs text-gray-400">© 2024 Brain Push</p>
       </footer>
     </main>
   );
