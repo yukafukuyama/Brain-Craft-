@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { BottomNav } from "@/components/BottomNav";
+import { useLanguage } from "@/components/LanguageProvider";
 
 const LINE_ADD_FRIEND_URL = (() => {
   const url = process.env.NEXT_PUBLIC_LINE_ADD_FRIEND_URL?.trim();
@@ -21,6 +22,7 @@ function isValidTime(s: string): boolean {
 }
 
 export default function NotificationPage() {
+  const { t } = useLanguage();
   const [notificationEnabled, setNotificationEnabled] = useState(false);
   const [idiomNotificationsEnabled, setIdiomNotificationsEnabled] = useState(true);
   const [notificationTimes, setNotificationTimes] = useState<(string | null)[]>(
@@ -69,7 +71,7 @@ export default function NotificationPage() {
     const valid = getValidTimes(times);
     const dups = checkDuplicates(times);
     if (dups.length > 0) {
-      setDuplicateWarning(`同じ時刻（${dups.join(", ")}）が重複しています`);
+      setDuplicateWarning(t("notification.duplicateTimes"));
       return;
     }
     setDuplicateWarning(null);
@@ -115,16 +117,16 @@ export default function NotificationPage() {
   return (
     <div className="min-h-screen bg-white pb-20">
       <header className="px-4 pt-6 pb-4">
-        <h1 className="text-xl font-bold text-gray-900">通知</h1>
+        <h1 className="text-xl font-bold text-gray-900">{t("notification.title")}</h1>
         <p className="text-sm text-gray-500 mt-1">
-          設定した時刻に、登録した単語の復習通知がLINEに届きます
+          {t("notification.subtitle")}
         </p>
       </header>
 
       <main className="px-4 max-w-lg mx-auto space-y-6">
         <section className="bg-gray-50 rounded-xl p-4 space-y-4">
           {loading ? (
-            <p className="text-gray-500">読み込み中...</p>
+            <p className="text-gray-500">{t("quiz.loading")}</p>
           ) : (
             <>
               <label className="flex items-center gap-3 cursor-pointer">
@@ -138,15 +140,15 @@ export default function NotificationPage() {
                   }}
                   className="w-5 h-5 rounded border-gray-300"
                 />
-                <span className="text-gray-700 font-medium">毎日お知らせを送る</span>
+                <span className="text-gray-700 font-medium">{t("notification.dailyNotify")}</span>
               </label>
 
               {notificationEnabled && (
                 <div className="space-y-3 pt-2 border-t border-gray-200">
                   <span className="block text-sm font-medium text-gray-700">
-                    送信時刻（最大5つ・日本時間）
+                    {t("notification.sendTimeLabel")}
                   </span>
-                  <p className="text-xs text-gray-500">数字をタップして時刻を変更。未選択は「--:--」、×でクリア</p>
+                  <p className="text-xs text-gray-500">{t("notification.timeHint")}</p>
 
                   <div className="space-y-3">
                     {[0, 1, 2, 3, 4].map((i) => (
@@ -203,13 +205,13 @@ export default function NotificationPage() {
                     disabled={saving}
                     className="w-full py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
                   >
-                    {saving ? "保存中..." : "時刻を保存"}
+                    {saving ? t("notification.saving") : t("notification.save")}
                   </button>
                 </div>
               )}
 
               {saved && (
-                <p className="text-sm text-green-600 font-medium">✓ 保存しました</p>
+                <p className="text-sm text-green-600 font-medium">✓ {t("notification.saved")}</p>
               )}
 
               <button
@@ -235,7 +237,7 @@ export default function NotificationPage() {
               </button>
 
               <div className="flex items-center justify-between py-3 px-4 bg-white rounded-lg border border-gray-200">
-                <span className="text-gray-700 font-medium">イディオムの通知</span>
+                <span className="text-gray-700 font-medium">{t("notification.idiomLabel")}</span>
                 <div className="flex rounded-lg overflow-hidden border border-gray-200">
                   <button
                     type="button"
@@ -272,7 +274,7 @@ export default function NotificationPage() {
                 href="/lists"
                 className="flex items-center justify-between w-full py-3 px-4 bg-white rounded-lg border border-gray-200 hover:bg-gray-50"
               >
-                <span className="text-gray-800 font-medium">リスト別の通知ON/OFF</span>
+                <span className="text-gray-800 font-medium">{t("settings.listsNotification")}</span>
                 <span className="text-blue-600 text-sm">→</span>
               </Link>
             </>

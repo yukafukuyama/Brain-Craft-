@@ -25,9 +25,10 @@ export async function POST(request: NextRequest) {
   const question = String(body.question ?? "").trim();
   const answer = String(body.answer ?? "").trim();
   const listName = String(body.listName ?? "").trim();
-  const isIdiom = word.includes(" ");
-  const type = isIdiom ? ("idiom" as const) : ("word" as const);
-  const containedWords = isIdiom
+  const bodyType = body.type === "idiom" ? ("idiom" as const) : body.type === "word" ? ("word" as const) : undefined;
+  const type = bodyType ?? (word.includes(" ") ? ("idiom" as const) : ("word" as const));
+  const isIdiom = type === "idiom";
+  const containedWords = isIdiom && word.includes(" ")
     ? word.split(/\s+/).map((s) => s.trim().toLowerCase()).filter(Boolean)
     : undefined;
 

@@ -12,7 +12,12 @@ export type NotificationSettings = {
   idiomNotificationsEnabled?: boolean;
 };
 
-type UserSettings = { notification: NotificationSettings };
+export type Locale = "ja" | "en";
+
+type UserSettings = {
+  notification: NotificationSettings;
+  language?: Locale;
+};
 
 async function getSettings(lineId: string): Promise<UserSettings> {
   const data = await storageGet<UserSettings>(SETTINGS_PREFIX + lineId);
@@ -84,4 +89,14 @@ export async function markNotificationSent(lineId: string, dateStr: string, time
   if (!sent.includes(timeStr)) sent.push(timeStr);
   current.notification.lastSentTimes = sent;
   await setSettings(lineId, current);
+}
+
+export async function getLanguage(lineId: string): Promise<Locale> {
+  const data = await getSettings(lineId);
+  return data.language === "en" ? "en" : "ja";
+}
+
+export async function setLanguage(lineId: string, language: Locale): Promise<void> {
+  const current = await getSettings(lineId);
+  await setSettings(lineId, { ...current, language });
 }

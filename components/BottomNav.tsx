@@ -2,32 +2,34 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useLanguage } from "@/components/LanguageProvider";
 
 type NavItem = {
   href: string;
-  label: string;
+  labelKey: string;
   icon: "home" | "book" | "bell" | "check" | "settings" | "quiz" | "idioms";
 };
 
 const navItems3: NavItem[] = [
-  { href: "/home", label: "ホーム", icon: "home" },
-  { href: "/words", label: "単語", icon: "book" },
-  { href: "/idioms", label: "イディオム", icon: "idioms" },
-  { href: "/learned", label: "習得", icon: "check" },
-  { href: "/settings", label: "設定", icon: "settings" },
+  { href: "/home", labelKey: "nav.home", icon: "home" },
+  { href: "/words", labelKey: "nav.words", icon: "book" },
+  { href: "/idioms", labelKey: "nav.idioms", icon: "idioms" },
+  { href: "/learned", labelKey: "nav.learned", icon: "check" },
+  { href: "/settings", labelKey: "nav.settings", icon: "settings" },
 ];
 
 const navItems4: NavItem[] = [
-  { href: "/home", label: "ホーム", icon: "home" },
-  { href: "/words", label: "単語", icon: "book" },
-  { href: "/idioms", label: "イディオム", icon: "idioms" },
-  { href: "/quiz", label: "問題", icon: "quiz" },
-  { href: "/learned", label: "習得", icon: "check" },
-  { href: "/settings", label: "設定", icon: "settings" },
+  { href: "/home", labelKey: "nav.home", icon: "home" },
+  { href: "/words", labelKey: "nav.words", icon: "book" },
+  { href: "/idioms", labelKey: "nav.idioms", icon: "idioms" },
+  { href: "/quiz", labelKey: "nav.quiz", icon: "quiz" },
+  { href: "/learned", labelKey: "nav.learned", icon: "check" },
+  { href: "/settings", labelKey: "nav.settings", icon: "settings" },
 ];
 
 export function BottomNav({ variant = "3" }: { variant?: "3" | "4" }) {
   const pathname = usePathname();
+  const { t } = useLanguage();
   const items = variant === "4" ? navItems4 : navItems3;
 
   const isActive = (href: string) => {
@@ -53,7 +55,7 @@ export function BottomNav({ variant = "3" }: { variant?: "3" | "4" }) {
               }`}
             >
               <NavIcon type={item.icon} active={active} />
-              <span className="text-xs">{item.label}</span>
+              <span className="text-xs">{t(item.labelKey)}</span>
             </Link>
           );
         })}

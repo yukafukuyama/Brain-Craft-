@@ -4,12 +4,14 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BottomNav } from "@/components/BottomNav";
+import { useLanguage } from "@/components/LanguageProvider";
 import type { Word } from "@/lib/words";
 
 type LearnedWord = Word & { learnedAtDisplay?: string };
 
 export default function LearnedPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [search, setSearch] = useState("");
   const [words, setWords] = useState<LearnedWord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,7 +33,7 @@ export default function LearnedPage() {
   }, [router]);
 
   const handleDelete = async (wordId: string) => {
-    if (!confirm("この単語を削除しますか？")) return;
+    if (!confirm(t("learned.deleteConfirm"))) return;
     try {
       const res = await fetch(`/api/words/${wordId}`, { method: "DELETE" });
       if (res.ok) {
@@ -54,7 +56,7 @@ export default function LearnedPage() {
     <div className="min-h-screen bg-white pb-20">
       {/* Header */}
       <header className="px-4 pt-6 pb-4">
-        <h1 className="text-xl font-bold text-gray-900 text-center">習得済み単語</h1>
+        <h1 className="text-xl font-bold text-gray-900 text-center">{t("learned.title")}</h1>
       </header>
 
       {/* Search */}
@@ -70,7 +72,7 @@ export default function LearnedPage() {
           </svg>
           <input
             type="text"
-            placeholder="習得した単語を検索..."
+            placeholder={t("learned.search")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-12 pr-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-amber-500"
@@ -82,7 +84,7 @@ export default function LearnedPage() {
       <div className="px-4 mb-6">
         <div className="bg-amber-50 rounded-2xl p-4 flex items-center justify-center gap-2">
           <p className="font-normal text-gray-800 text-center">
-            合計 <span className="font-extrabold text-4xl text-red-600">{words.length}</span> 単語をマスターしました!
+            {t("learned.total")} <span className="font-extrabold text-4xl text-red-600">{words.length}</span> {t("learned.mastered")}
             <span className="text-4xl ml-1">🎊</span>
           </p>
         </div>
@@ -91,11 +93,11 @@ export default function LearnedPage() {
       {/* Word Lists */}
       <main className="px-4 space-y-6">
         {loading ? (
-          <p className="py-8 text-center text-gray-500">読み込み中...</p>
+          <p className="py-8 text-center text-gray-500">{t("learned.loading")}</p>
         ) : (
         <>
         <section>
-          <h2 className="text-sm font-medium text-gray-700 mb-3">最近習得した単語</h2>
+          <h2 className="text-sm font-medium text-gray-700 mb-3">{t("learned.recent")}</h2>
           <ul className="space-y-3">
             {recent.map((item) => (
               <li
@@ -119,7 +121,7 @@ export default function LearnedPage() {
                       handleDelete(item.id);
                     }}
                     className="p-2 text-gray-400 hover:text-red-600"
-                    aria-label="削除"
+                    aria-label={t("words.delete")}
                   >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <polyline points="3 6 5 6 21 6" />
@@ -135,7 +137,7 @@ export default function LearnedPage() {
         </section>
 
         <section>
-          <h2 className="text-sm font-medium text-gray-700 mb-3">過去の習得</h2>
+          <h2 className="text-sm font-medium text-gray-700 mb-3">{t("learned.past")}</h2>
           <ul className="space-y-3">
             {filteredPast.map((item) => (
               <li
@@ -158,7 +160,7 @@ export default function LearnedPage() {
                       handleDelete(item.id);
                     }}
                     className="p-2 text-gray-400 hover:text-red-600"
-                    aria-label="削除"
+                    aria-label={t("words.delete")}
                   >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <polyline points="3 6 5 6 21 6" />
@@ -175,7 +177,7 @@ export default function LearnedPage() {
 
         {words.length > 3 && (
         <button className="w-full py-3 text-amber-600 font-medium flex items-center justify-center gap-2">
-          さらに読み込む
+          {t("learned.loadMore")}
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polyline points="6 9 12 15 18 9" />
           </svg>

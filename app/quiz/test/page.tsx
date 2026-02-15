@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { saveQuizProgress } from "@/lib/quiz-progress";
 import { WeeklyProgressCard } from "@/components/WeeklyProgressCard";
+import { useLanguage } from "@/components/LanguageProvider";
 
 const QUIZ_SESSION_SIZE = 10;
 
@@ -29,6 +30,7 @@ function shuffle<T>(arr: T[]): T[] {
 function QuizTestContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useLanguage();
   const listParam = searchParams.get("list") ?? "";
   const typeParam = (searchParams.get("type") ?? "both") as "word" | "idiom" | "both";
   const [status, setStatus] = useState<"loading" | "no-words" | "quiz" | "done">("loading");
@@ -112,18 +114,18 @@ function QuizTestContent() {
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M19 12H5M12 19l-7-7 7-7" />
         </svg>
-        問題に戻る
+        {t("quiz.backToList")}
       </Link>
 
       {status === "loading" && (
-        <p className="text-center text-gray-500 py-12">読み込み中...</p>
+        <p className="text-center text-gray-500 py-12">{t("quiz.loading")}</p>
       )}
 
       {status === "no-words" && (
         <div className="text-center py-12">
-          <p className="text-gray-600 mb-4">出題できる単語がありません。</p>
+          <p className="text-gray-600 mb-4">{t("quiz.noWords")}</p>
           <Link href="/quiz" className="text-blue-600 hover:underline">
-            問題に戻る
+            {t("quiz.backToList")}
           </Link>
         </div>
       )}
@@ -153,7 +155,7 @@ function QuizTestContent() {
                 </div>
               ) : (
                 <p className="text-lg font-medium text-gray-800">
-                  意味: {currentWord.meaning}
+                  {t("quiz.meaningLabel")}: {currentWord.meaning}
                 </p>
               )}
 
@@ -180,7 +182,7 @@ function QuizTestContent() {
                   onClick={handleReveal}
                   className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors"
                 >
-                  答えを表示
+                  {t("quiz.revealAnswer")}
                 </button>
               ) : (
                 <button
@@ -188,7 +190,7 @@ function QuizTestContent() {
                   onClick={handleNext}
                   className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors"
                 >
-                  {isLastCard ? "完了" : "次へ"}
+                  {isLastCard ? t("quiz.done") : t("quiz.next")}
                 </button>
               )}
             </div>
@@ -196,7 +198,7 @@ function QuizTestContent() {
 
           {revealed && !isLastCard && (
             <p className="text-center text-sm text-gray-500">
-              次のカードへ進むには「次へ」をタップ
+              {t("quiz.nextHint")}
             </p>
           )}
         </div>
@@ -205,9 +207,9 @@ function QuizTestContent() {
       {status === "done" && (
         <div className="space-y-8 max-w-lg mx-auto">
           <div className="text-center py-8">
-            <h2 className="text-2xl font-bold text-gray-900">お疲れ様でした！</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{t("quiz.resultTitle")}</h2>
             <p className="text-gray-600 mt-2">
-              {total} 問復習しました
+              {total} {t("quiz.resultCount")}
             </p>
           </div>
           <div
@@ -222,7 +224,7 @@ function QuizTestContent() {
             onClick={loadWords}
             className="w-full py-4 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl transition-colors"
           >
-            もう10問挑戦する
+            {t("quiz.another10")}
           </button>
           <Link
             href="/quiz"
@@ -231,7 +233,7 @@ function QuizTestContent() {
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
-            リスト一覧に戻る
+            {t("quiz.backToListResult")}
           </Link>
         </div>
       )}

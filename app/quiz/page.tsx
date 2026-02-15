@@ -5,12 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/BottomNav";
 import { WeeklyProgressCard } from "@/components/WeeklyProgressCard";
+import { useLanguage } from "@/components/LanguageProvider";
 
 type ListItem = { name: string; isNotificationEnabled: boolean };
 type QuizType = "word" | "idiom" | "both";
 
 export default function QuizPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [lists, setLists] = useState<ListItem[]>([]);
   const [selectedList, setSelectedList] = useState<string>("");
   const [quizType, setQuizType] = useState<QuizType>("both");
@@ -75,47 +77,47 @@ export default function QuizPage() {
   return (
     <div className="min-h-screen bg-white pb-20">
       <header className="px-4 pt-6 pb-4">
-        <h1 className="text-xl font-bold text-gray-900">問題</h1>
+        <h1 className="text-xl font-bold text-gray-900">{t("quiz.title")}</h1>
         <p className="text-sm text-gray-500 mt-1">
-          リストを選んで、単語の復習テストを始めましょう
+          {t("quiz.subtitle")}
         </p>
       </header>
 
       <main className="px-4 max-w-lg mx-auto space-y-6">
         <section className="bg-gray-50 rounded-xl p-4 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">出題する種類</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">{t("quiz.typeLabel")}</label>
             <div className="flex rounded-lg overflow-hidden border border-gray-200">
-              {(["both", "word", "idiom"] as const).map((t) => (
+              {(["both", "word", "idiom"] as const).map((type) => (
                 <button
-                  key={t}
+                  key={type}
                   type="button"
-                  onClick={() => setQuizType(t)}
+                  onClick={() => setQuizType(type)}
                   className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-                    quizType === t
+                    quizType === type
                       ? "bg-blue-600 text-white"
                       : "bg-white text-gray-600 hover:bg-gray-50 border-r border-gray-200 last:border-r-0"
                   }`}
                 >
-                  {t === "both" ? (
-                    <>単語・<br />イディオム</>
-                  ) : t === "word" ? (
-                    "単語のみ"
+                  {type === "both" ? (
+                    t("quiz.typeBoth")
+                  ) : type === "word" ? (
+                    t("quiz.typeWord")
                   ) : (
-                    <span className="whitespace-nowrap">イディオムのみ</span>
+                    <span className="whitespace-nowrap">{t("quiz.typeIdiom")}</span>
                   )}
                 </button>
               ))}
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">出題するリスト</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">{t("quiz.listLabel")}</label>
             <select
               value={selectedList}
               onChange={(e) => setSelectedList(e.target.value)}
               className="w-full px-4 py-3 bg-white rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="">すべてのリスト</option>
+              <option value="">{t("quiz.allLists")}</option>
               <option value="未分類">未分類</option>
               {lists.filter((l) => l.name !== "未分類").map((l) => (
                 <option key={l.name} value={l.name}>
@@ -126,10 +128,10 @@ export default function QuizPage() {
           </div>
 
           {loading ? (
-            <p className="text-sm text-gray-500">読み込み中...</p>
+            <p className="text-sm text-gray-500">{t("quiz.loading")}</p>
           ) : (
             <p className="text-sm text-gray-600">
-              出題可能：<span className="font-bold text-blue-600">{wordCount}</span> 件
+              {t("quiz.availableLabel")}: <span className="font-bold text-blue-600">{wordCount}</span>
             </p>
           )}
 
@@ -139,12 +141,12 @@ export default function QuizPage() {
             disabled={loading || wordCount === 0}
             className="w-full py-4 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors"
           >
-            テストを開始する
+            {t("quiz.startTest")}
           </button>
 
           {wordCount === 0 && !loading && (
             <p className="text-sm text-amber-600">
-              出題できる項目がありません。登録するか、別の種類・リストを選んでください。
+              {t("quiz.noItems")}
             </p>
           )}
         </section>

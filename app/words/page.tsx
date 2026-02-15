@@ -5,11 +5,13 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BottomNav } from "@/components/BottomNav";
 import { WordDetailCard } from "@/components/WordDetailCard";
+import { useLanguage } from "@/components/LanguageProvider";
 import type { Word } from "@/lib/words";
 
 function WordsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useLanguage();
   const qParam = searchParams.get("q") ?? "";
   const [search, setSearch] = useState(qParam);
   const [filterList, setFilterList] = useState<string>("");
@@ -76,12 +78,12 @@ function WordsContent() {
     <div className="min-h-screen bg-white pb-20">
       {/* Header */}
       <header className="px-4 pt-6 pb-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">単語一覧</h1>
+        <h1 className="text-xl font-bold text-gray-900">{t("words.title")}</h1>
         <div className="flex items-center gap-1">
           <Link
             href="/home"
             className="p-2 text-blue-600"
-            aria-label="単語登録"
+            aria-label={t("home.registerWord")}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="12" y1="5" x2="12" y2="19" />
@@ -91,7 +93,7 @@ function WordsContent() {
           <Link
             href="/notification"
             className="p-2 text-blue-600"
-            aria-label="通知設定"
+            aria-label={t("notification.title")}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
@@ -101,7 +103,7 @@ function WordsContent() {
           <Link
             href="/lists"
             className="p-2 text-blue-600"
-            aria-label="リスト別の通知ON/OFF"
+            aria-label={t("settings.listsNotification")}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="8" y1="6" x2="21" y2="6" />
@@ -122,7 +124,7 @@ function WordsContent() {
           onChange={(e) => setFilterList(e.target.value)}
           className="w-full px-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-blue-500"
         >
-          <option value="">すべてのリスト</option>
+          <option value="">{t("quiz.allLists")}</option>
           {lists.map((l) => (
             <option key={l.name} value={l.name}>{l.name}</option>
           ))}
@@ -138,7 +140,7 @@ function WordsContent() {
           </svg>
           <input
             type="text"
-            placeholder="単語を検索"
+            placeholder={t("words.search")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-12 pr-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-blue-500"
@@ -149,7 +151,7 @@ function WordsContent() {
       {/* Word List */}
       <main className="px-4">
         {loading ? (
-          <p className="py-8 text-center text-gray-500">読み込み中...</p>
+          <p className="py-8 text-center text-gray-500">{t("quiz.loading")}</p>
         ) : (
         <ul className="divide-y divide-gray-200">
           {filteredWords.map((item) => (
@@ -169,7 +171,7 @@ function WordsContent() {
                     <Link
                       href={`/words/${item.id}/edit`}
                       className="text-blue-600 p-1 inline-block"
-                      aria-label="編集"
+                      aria-label={t("words.edit")}
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -187,7 +189,7 @@ function WordsContent() {
                 onClick={() => handleLearned(item.id)}
                 className="shrink-0 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition-colors"
               >
-                覚えた！
+                {t("words.learned")}
               </button>
             </li>
           ))}

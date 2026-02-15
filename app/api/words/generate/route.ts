@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { GoogleGenAI } from "@google/genai";
+import { getLanguage } from "@/lib/settings-store";
+import type { Locale } from "@/lib/settings-store";
 
 const IDIOM_EXAMPLE = `例：「get back to」の場合は
 {
@@ -12,24 +14,82 @@ const IDIOM_EXAMPLE = `例：「get back to」の場合は
   "example_jt": "金曜日までに詳細を改めてお伝えします。"
 }`;
 
-function buildIdiomPrompt(generateQuiz: boolean, generateAnswer: boolean): string {
-  const jsonFields = [
-    '"meaning": "イディオムの意味（日本語、簡潔に）"',
-    '"breakdown": "構成要素の分解（各単語の本来の意味を＋で繋ぐ。例：get（得る）＋ back（戻る）＋ to（〜へ））"',
-    '"reaction": "化学反応：組み合わさることでなぜ今の意味になるかを、イメージで解説"',
-    '"usage": "使い分け：ビジネス、日常会話など、どんな場面で使われるのが自然か"',
-    '"example": "例文（イディオムのニュアンスが一番伝わるシチュエーション）"',
-    '"example_jt": "例文の日本語訳"',
-  ];
+const FURIGANA_INSTRUCTION_EN = `【Japanese translations with furigana (when app language is English)】
+The user learns English while also learning to read Japanese kanji. For all Japanese text you output (meaning, example_jt, quiz_jt, and any idiom fields in Japanese):
+1. Use both hiragana and kanji (do not use only kanji or only kana).
+2. Add furigana to kanji so readings are clear. Prefer the inline format 漢字(かんじ) (e.g. 学習(がくしゅう), 例文(れいぶん)) for compatibility. HTML <ruby>漢字<rt>かんじ</rt></ruby> is also acceptable.
+Use the same format consistently throughout.`;
+
+const BEGINNER_MODE_EN = `【初心者モード】
+・語彙制限：専門用語や難解な漢字を使わず、小学校低学年が理解できる言葉で説明してください。
+・具体例の重視：辞書的な定義（例：〜科の植物）ではなく、見た目・味・使い方（例：赤い、甘い、食べる）を優先してください。
+・ふりがなの徹底：全ての漢字に 漢字(かんじ) 形式でふりがなを付けてください。`;
+
+const BEGINNER_MODE_EN_SUPPLEMENT = `【Beginner mode — English supplement】
+When app language is English: After the Japanese explanation, add one line in Plain English (simple, easy words) to summarize or clarify.`;
+
+const JAPANESE_IDIOM_DETECTION_EN = `【When input is in Japanese: detect 単語 vs 慣用句】
+If the input appears to be Japanese, first determine whether it is:
+- 単語 (a simple word): output as usual.
+- 慣用句・イディオム・ことわざ (idiom/proverb): apply the idiom format below.
+
+Detection criteria:
+1. Morphological: If multiple words/phrases combine to have a figurative meaning different from their literal meaning → treat as idiom (e.g. 猫をかぶる, 手が届く).
+2. Dictionary: Prioritize expressions commonly found in idiom dictionaries (e.g. 猫をかぶる, 手が届く, 頭に来る).
+
+【For Japanese idiom in English mode】
+When the input is a Japanese idiom and the user's language is English: explain the idiom's meaning in English first, then add the Japanese explanation with furigana (漢字(かんじ)). Format: "English: [meaning]. 日本語: [explanation with 漢字(かんじ) furigana]."`;
+
+function getLanguageInstruction(locale: Locale): string {
+  if (locale === "en") {
+    return `The user's language setting is English. Output word/idiom meanings and example/quiz translations in **Japanese** (so they can learn English vocabulary while also learning to read Japanese). All such Japanese text must include both hiragana and kanji, with furigana on kanji using the format 漢字(かんじ) or <ruby>漢字<rt>かんじ</rt></ruby>. Use example_jt and quiz_jt for the Japanese translation of the example and quiz sentences in this furigana format.
+
+${BEGINNER_MODE_EN}
+
+${BEGINNER_MODE_EN_SUPPLEMENT}
+
+${FURIGANA_INSTRUCTION_EN}
+
+${JAPANESE_IDIOM_DETECTION_EN}`;
+  }
+  return "ユーザーの言語設定は『日本語』です。単語・イディオムの解説、意味、例文の訳はすべて日本語で出力してください。ふりがなは不要です。";
+}
+
+function buildIdiomPrompt(generateQuiz: boolean, generateAnswer: boolean, locale: Locale): string {
+  const langPrefix = getLanguageInstruction(locale);
+  const isEn = locale === "en";
+  const jsonFields = isEn
+    ? [
+        '"meaning": "イディオムの意味（日本語・漢字にふりがな）。最後に Plain English: [1行] で補足"',
+        '"breakdown": "構成要素の分解。各単語の意味を 漢字(かんじ) 形式で。例：get（得る）＋ back（戻る）＋ to（〜へ）"',
+        '"reaction": "化学反応の解説（日本語）。漢字には 漢字(かんじ) でふりがな"',
+        '"usage": "使い分けの解説（日本語）。漢字には 漢字(かんじ) でふりがな"',
+        '"example": "例文（英語など対象言語）"',
+        '"example_jt": "例文の日本語訳。ひらがなと漢字を併記し、漢字には 漢字(かんじ) でふりがな"',
+      ]
+    : [
+        '"meaning": "イディオムの意味（日本語、簡潔に）"',
+        '"breakdown": "構成要素の分解（各単語の本来の意味を＋で繋ぐ。例：get（得る）＋ back（戻る）＋ to（〜へ））"',
+        '"reaction": "化学反応：組み合わさることでなぜ今の意味になるかを、イメージで解説"',
+        '"usage": "使い分け：ビジネス、日常会話など、どんな場面で使われるのが自然か"',
+        '"example": "例文（イディオムのニュアンスが一番伝わるシチュエーション）"',
+        '"example_jt": "例文の日本語訳"',
+      ];
   if (generateQuiz) {
-    jsonFields.push('"quiz": "穴埋め問題（対象言語。空欄は ___ で示す）"');
-    jsonFields.push('"quiz_jt": "穴埋めの日本語訳（___は使わず、空欄を埋めた完全な文）"');
+    jsonFields.push(isEn ? '"quiz": "穴埋め問題（対象言語。空欄は ___ で示す）"' : '"quiz": "穴埋め問題（対象言語。空欄は ___ で示す）"');
+    jsonFields.push(isEn ? '"quiz_jt": "穴埋めの日本語訳（___は使わず完全な文）。漢字には 漢字(かんじ) でふりがな"' : '"quiz_jt": "穴埋めの日本語訳（___は使わず、空欄を埋めた完全な文、ふりがな不要）"');
   }
   if (generateAnswer) {
     jsonFields.push('"answer": "穴埋めの答え（入力されたイディオムそのもの）"');
   }
 
-  return `イディオム（慣用句・句動詞）学習用のデータを生成してください。
+  const furiganaNote = isEn
+    ? "\n【ふりがな】\n全ての日本語（meaning, breakdown, reaction, usage, example_jt, quiz_jt）にはひらがなと漢字の両方を使い、漢字には 漢字(かんじ) の形式でふりがなを付けてください。HTMLの <ruby>漢字<rt>かんじ</rt></ruby> でも可。\n\n"
+    : "";
+
+  return `${langPrefix}
+${furiganaNote}
+イディオム（慣用句・句動詞）学習用のデータを生成してください。
 入力は2語以上のフレーズです。イディオムとして特別に解析してください。
 
 【必須項目】
@@ -52,42 +112,54 @@ ${IDIOM_EXAMPLE}
 }`;
 }
 
-function buildSystemPrompt(generateQuiz: boolean, generateAnswer: boolean): string {
-  const base = `単語学習アプリ用のデータを生成してください。
-
-【多言語対応】
-入力された単語の言語を自動で判別し、その言語の学習に最適な例文を作成してください。
-英語、韓国語、中国語、フランス語、スペイン語など、あらゆる言語に対応してください。
-
-【日本語訳の必須追加】
-例文（example）には、必ずその日本語訳（example_jt）をセットで付けてください。
-quiz_jt（穴埋めの日本語訳）は、___ は使わず、空欄を埋めた状態の完全な文を書いてください。`;
-
+function buildSystemPrompt(generateQuiz: boolean, generateAnswer: boolean, locale: Locale): string {
+  const langPrefix = getLanguageInstruction(locale);
+  const isJa = locale === "ja";
+  const translationNote = isJa
+    ? "【日本語訳の必須追加】\n例文（example）には、必ずその日本語訳（example_jt）をセットで付けてください。\nquiz_jt（穴埋めの日本語訳）は、___ は使わず、空欄を埋めた状態の完全な文を書いてください。"
+    : "Always include example_jt (translation of the example in the user's language). For quiz_jt, write the full sentence with the blank filled, no ___.";
   const quizSection = generateQuiz
-    ? `穴埋め問題（quiz）を作成する場合も、必ずその日本語訳（quiz_jt）をセットで付けてください。`
+    ? (isJa ? "穴埋め問題（quiz）を作成する場合も、必ずその日本語訳（quiz_jt）をセットで付けてください。" : "Include quiz_jt (translation of the quiz sentence) when generating quiz.")
     : "";
 
-  const jsonFields = [
-    '"meaning": "単語の意味（日本語）"',
-    '"example": "例文（対象言語）"',
-    '"example_jt": "例文の日本語訳"',
-  ];
+  const jsonFields = isJa
+    ? [
+        '"type": "word" or "idiom" — 入力が慣用句・ことわざの場合は "idiom"、単語の場合は "word"',
+        '"meaning": "単語の意味（日本語、ふりがな不要）"',
+        '"example": "例文（対象言語）"',
+        '"example_jt": "例文の日本語訳（ふりがな不要）"',
+      ]
+    : [
+        '"type": "word" or "idiom" — when input is Japanese idiom (慣用句) set "idiom", else "word"',
+        '"meaning": "Japanese explanation with 漢字(かんじ) furigana; then add one line Plain English: [simple summary]"',
+        '"example": "example sentence (target language, e.g. English)"',
+        '"example_jt": "Japanese translation with 漢字(かんじ) furigana"',
+      ];
   if (generateQuiz) {
-    jsonFields.push('"quiz": "穴埋め問題（対象言語。空欄は ___ で示す）"');
-    jsonFields.push('"quiz_jt": "穴埋めの日本語訳（___は使わず、空欄を埋めた完全な文）"');
+    jsonFields.push(isJa ? '"quiz": "穴埋め問題（対象言語。空欄は ___ で示す）"' : '"quiz": "fill-in-blank quiz (use ___ for blank)"');
+    jsonFields.push(isJa ? '"quiz_jt": "穴埋めの日本語訳（___は使わず、空欄を埋めた完全な文、ふりがな不要）"' : '"quiz_jt": "Japanese translation of quiz sentence (full sentence, no ___); use 漢字(かんじ) or <ruby> for furigana"');
   }
   if (generateAnswer) {
     jsonFields.push('"answer": "穴埋めの答え（入力された単語そのもの）"');
   }
 
-  return `${base}
-${quizSection}
+  const base = `${langPrefix}
+
+単語学習アプリ用のデータを生成してください。
+
+【多言語対応】
+入力された単語の言語を自動で判別し、その言語の学習に最適な例文を作成してください。
+英語、韓国語、中国語、フランス語、スペイン語など、あらゆる言語に対応してください。
+
+${translationNote}
+${quizSection ? `\n${quizSection}` : ""}
 
 【出力フォーマット】
 レスポンスは必ず以下のJSON形式のみで返してください。他のテキストやマークダウンは含めないでください。
 {
   ${jsonFields.join(",\n  ")}
 }`;
+  return base;
 }
 
 export async function POST(request: NextRequest) {
@@ -109,11 +181,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "ログインしてください" }, { status: 401 });
   }
 
+  let session: { lineId: string };
   try {
-    JSON.parse(sessionCookie);
+    session = JSON.parse(sessionCookie);
   } catch {
     return NextResponse.json({ error: "セッションが無効です" }, { status: 401 });
   }
+
+  const language: Locale = (await getLanguage(session.lineId)) ?? "ja";
 
   const body = await request.json();
   const word = String(body.word ?? "").trim();
@@ -126,8 +201,8 @@ export async function POST(request: NextRequest) {
 
   const isIdiom = word.includes(" ");
   const systemPrompt = isIdiom
-    ? buildIdiomPrompt(generateQuiz, generateAnswer)
-    : buildSystemPrompt(generateQuiz, generateAnswer);
+    ? buildIdiomPrompt(generateQuiz, generateAnswer, language)
+    : buildSystemPrompt(generateQuiz, generateAnswer, language);
   const userPrompt = isIdiom
     ? `次のイディオムのデータを生成してください：${word}`
     : `次の単語の意味、例文${generateQuiz ? "、穴埋め形式の問題" : ""}${generateAnswer ? "、その答え" : ""}を生成してください：${word}`;
@@ -154,6 +229,7 @@ ${userPrompt}`;
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       const jsonStr = jsonMatch ? jsonMatch[0] : content;
       const parsed = JSON.parse(jsonStr) as {
+        type?: "word" | "idiom";
         meaning?: string;
         example?: string;
         example_jt?: string;
@@ -191,7 +267,9 @@ ${userPrompt}`;
         exampleOut = exJt ? `${ex}\n（訳）${exJt}` : ex;
       }
 
+      const detectedType = isIdiom ? ("idiom" as const) : (parsed.type === "idiom" ? "idiom" : "word");
       return NextResponse.json({
+        type: detectedType,
         meaning: String(parsed.meaning ?? "").trim(),
         example: exampleOut,
         question: qJt ? `${q}\n（訳）${qJt}` : q,

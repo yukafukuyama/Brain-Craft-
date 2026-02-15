@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/BottomNav";
+import { useLanguage } from "@/components/LanguageProvider";
 
 const LINE_ADD_FRIEND_URL = (() => {
   const url = process.env.NEXT_PUBLIC_LINE_ADD_FRIEND_URL?.trim();
@@ -18,6 +19,7 @@ const LINE_DEEP_LINK = LINE_ADD_FRIEND_URL
 
 export default function HomePage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [word, setWord] = useState("");
   const [meaning, setMeaning] = useState("");
   const [example, setExample] = useState("");
@@ -31,6 +33,7 @@ export default function HomePage() {
   const [generateQuiz, setGenerateQuiz] = useState(true);
   const [generateAnswer, setGenerateAnswer] = useState(true);
   const [error, setError] = useState("");
+  const [aiGeneratedType, setAiGeneratedType] = useState<"word" | "idiom" | null>(null);
 
   useEffect(() => {
     fetch("/api/lists")
@@ -42,7 +45,7 @@ export default function HomePage() {
   const handleAiGenerate = async () => {
     const trimmed = word.trim();
     if (!trimmed) {
-      setError("先に単語を入力してください");
+      setError(t("home.enterWordFirst"));
       return;
     }
     setError("");
@@ -59,15 +62,16 @@ export default function HomePage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "生成に失敗しました");
+        setError(data.error || t("home.generateFailed"));
         return;
       }
       setMeaning(data.meaning ?? "");
       setExample(data.example ?? "");
       if (generateQuiz) setQuestion(data.question ?? "");
       if (generateAnswer) setAnswer(data.answer ?? trimmed);
+      setAiGeneratedType(data.type === "idiom" || data.type === "word" ? data.type : null);
     } catch {
-      setError("通信エラーが発生しました");
+      setError(t("home.networkError"));
     } finally {
       setGenerating(false);
     }
@@ -76,7 +80,7 @@ export default function HomePage() {
   const handleRegister = async () => {
     setError("");
     if (!word.trim()) {
-      setError("単語を入力してください");
+      setError(t("home.enterWord"));
       return;
     }
     setLoading(true);
@@ -91,11 +95,12 @@ export default function HomePage() {
           question: question.trim(),
           answer: answer.trim(),
           listName: (newListName.trim() || listName || "").trim() || undefined,
+          ...(aiGeneratedType && { type: aiGeneratedType }),
         }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "登録に失敗しました");
+        setError(data.error || t("home.registerFailed"));
         return;
       }
       setWord("");
@@ -104,8 +109,9 @@ export default function HomePage() {
       setQuestion("");
       setAnswer("");
       setNewListName("");
+      setAiGeneratedType(null);
     } catch {
-      setError("通信エラーが発生しました");
+      setError(t("home.networkError"));
     } finally {
       setLoading(false);
     }
@@ -117,10 +123,10 @@ export default function HomePage() {
       <header className="px-4 pt-6 pb-4">
         <div>
           <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <span>BrainCraft</span>
+            <span>{t("home.title")}</span>
             <span className="text-2xl">🧠</span>
           </h1>
-          <p className="text-sm text-gray-500">中々覚えられない単語を、日常の一部に！</p>
+          <p className="text-sm text-gray-500">{t("home.tagline")}</p>
         </div>
       </header>
 
@@ -128,7 +134,7 @@ export default function HomePage() {
       <main className="px-4 max-w-lg mx-auto">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">リスト</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t("home.list")}</label>
             <div className="flex gap-2">
               <select
                 value={newListName ? "" : listName}
@@ -138,14 +144,14 @@ export default function HomePage() {
                 }}
                 className="flex-1 px-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">未分類</option>
+                <option value="">{t("home.uncategorized")}</option>
                 {lists.filter((l) => l.name !== "未分類").map((l) => (
                   <option key={l.name} value={l.name}>{l.name}</option>
                 ))}
               </select>
               <input
                 type="text"
-                placeholder="新規リスト名"
+                placeholder={t("home.newList")}
                 value={newListName}
                 onChange={(e) => {
                   setNewListName(e.target.value);
@@ -156,13 +162,16 @@ export default function HomePage() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">単語</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t("home.word")}</label>
             <div className="flex gap-2">
               <input
                 type="text"
-                placeholder="例: Resilience または get back to（イディオム）"
+                placeholder={t("home.wordPlaceholder")}
                 value={word}
-                onChange={(e) => setWord(e.target.value)}
+                onChange={(e) => {
+                  setWord(e.target.value);
+                  setAiGeneratedType(null);
+                }}
                 className="flex-1 px-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-blue-500"
               />
               <button
@@ -177,10 +186,10 @@ export default function HomePage() {
                       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeOpacity="0.25" />
                       <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" strokeOpacity="0.75" />
                     </svg>
-                    生成中
+                    {t("home.generating")}
                   </>
                 ) : (
-                  <>AIで自動入力</>
+                  <>{t("home.aiAutoFill")}</>
                 )}
               </button>
             </div>
@@ -192,7 +201,7 @@ export default function HomePage() {
                   onChange={(e) => setGenerateQuiz(e.target.checked)}
                   className="w-4 h-4 rounded border-gray-300"
                 />
-                問題を生成
+                {t("home.generateQuiz")}
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -201,24 +210,24 @@ export default function HomePage() {
                   onChange={(e) => setGenerateAnswer(e.target.checked)}
                   className="w-4 h-4 rounded border-gray-300"
                 />
-                答えを生成
+                {t("home.generateAnswer")}
               </label>
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">意味</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t("home.meaning")}</label>
             <input
               type="text"
-              placeholder="例: 回復力、弾力性"
+              placeholder={t("home.meaningPlaceholder")}
               value={meaning}
               onChange={(e) => setMeaning(e.target.value)}
               className="w-full px-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">例文</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t("home.example")}</label>
             <textarea
-              placeholder="例: She showed great resilience."
+              placeholder={t("home.examplePlaceholder")}
               value={example}
               onChange={(e) => setExample(e.target.value)}
               rows={6}
@@ -226,9 +235,9 @@ export default function HomePage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">問題</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t("quiz.title")}</label>
             <textarea
-              placeholder="例: 回復力、弾力性を表す英単語は？"
+              placeholder={t("home.questionPlaceholder")}
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               rows={5}
@@ -236,10 +245,10 @@ export default function HomePage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">答え</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t("home.answerLabel")}</label>
             <input
               type="text"
-              placeholder="例: Resilience"
+              placeholder={t("home.answerPlaceholder")}
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
               className="w-full px-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-blue-500"
@@ -253,7 +262,7 @@ export default function HomePage() {
             disabled={loading}
             className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium rounded-xl transition-colors"
           >
-            {loading ? "登録中..." : "単語登録"}
+            {loading ? t("home.registering") : t("home.registerWord")}
           </button>
 
           <Link
@@ -264,7 +273,7 @@ export default function HomePage() {
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
               <path d="M13.73 21a2 2 0 0 1-3.46 0" />
             </svg>
-            通知の時間を設定
+            {t("home.notificationSetting")}
           </Link>
 
           {LINE_ADD_FRIEND_URL ? (
@@ -284,15 +293,15 @@ export default function HomePage() {
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755z" />
                 </svg>
-                LINE通知の登録（友だち追加）
+                {t("home.lineAddFriend")}
               </a>
               <p className="text-sm text-gray-600">
-                友だち追加すると、単語登録時にLINEへ通知が届き、設定した時刻に復習通知が送られます。
+                {t("home.lineDescription")}
               </p>
             </div>
           ) : (
             <p className="text-sm text-gray-500 text-center py-2">
-              LINE通知は Messaging API 設定後に利用できます
+              {t("home.lineUnavailable")}
             </p>
           )}
         </div>
