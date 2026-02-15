@@ -15,10 +15,10 @@ export default function AuthSuccessPage() {
         <button
           type="button"
           onClick={goHome}
-          className="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
+          className="w-12 h-12 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
           aria-label="閉じる"
         >
-          <span className="text-2xl leading-none">×</span>
+          <span className="text-4xl leading-none">×</span>
         </button>
       </header>
 
@@ -44,7 +44,7 @@ export default function AuthSuccessPage() {
 
         <Link
           href="#add-to-home"
-          className="text-blue-600 font-medium mb-6"
+          className="text-blue-600 font-medium mb-6 text-lg"
         >
           ホーム画面に追加して始める
         </Link>
