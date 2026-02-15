@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getListNames } from "@/lib/words-store";
+import { getListNotificationSettings } from "@/lib/list-settings-store";
 
 export async function GET() {
   const cookieStore = await cookies();
@@ -15,6 +16,11 @@ export async function GET() {
     return NextResponse.json({ error: "セッションが無効です" }, { status: 401 });
   }
 
-  const lists = await getListNames(session.lineId);
+  const listNames = await getListNames(session.lineId);
+  const notifSettings = await getListNotificationSettings(session.lineId, listNames);
+  const lists = listNames.map((name) => ({
+    name,
+    isNotificationEnabled: notifSettings[name] ?? true,
+  }));
   return NextResponse.json({ lists });
 }

@@ -10,7 +10,7 @@ export default function WordsPage() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [filterList, setFilterList] = useState<string>("");
-  const [lists, setLists] = useState<string[]>([]);
+  const [lists, setLists] = useState<{ name: string; isNotificationEnabled: boolean }[]>([]);
   const [words, setWords] = useState<Word[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -89,7 +89,7 @@ export default function WordsPage() {
         >
           <option value="">すべてのリスト</option>
           {lists.map((l) => (
-            <option key={l} value={l}>{l}</option>
+            <option key={l.name} value={l.name}>{l.name}</option>
           ))}
         </select>
         <div className="relative">

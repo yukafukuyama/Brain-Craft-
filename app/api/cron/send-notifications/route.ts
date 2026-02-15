@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUsersToNotify, markNotificationSent } from "@/lib/settings-store";
 import { getWords } from "@/lib/words-store";
+import { getListNotificationSettings } from "@/lib/list-settings-store";
 import { sendPushMessage } from "@/lib/line-messaging";
 
 // JST = UTC+9
@@ -33,7 +34,13 @@ export async function GET(request: NextRequest) {
   const results: { lineId: string; ok: boolean }[] = [];
   const timeStr = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
   for (const lineId of lineIds) {
-    const words = await getWords(lineId);
+    const allWords = await getWords(lineId);
+    const listNames = [...new Set(allWords.map((w) => w.listName?.trim() || "未分類"))];
+    const notifSettings = await getListNotificationSettings(lineId, listNames);
+    const words = allWords.filter((w) => {
+      const listName = w.listName?.trim() || "未分類";
+      return notifSettings[listName] ?? true;
+    });
 
     if (words.length === 0) {
       await markNotificationSent(lineId, dateStr, timeStr);

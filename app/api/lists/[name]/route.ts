@@ -1,7 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { deleteList } from "@/lib/words-store";
+import { setListNotificationEnabled } from "@/lib/list-settings-store";
 import { DEFAULT_LIST_NAME } from "@/lib/words";
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ name: string }> }
+) {
+  const { name: listName } = await params;
+  const decodedName = decodeURIComponent(listName);
+
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get("braincraft_session")?.value;
+  if (!sessionCookie) {
+    return NextResponse.json({ error: "ログインしてください" }, { status: 401 });
+  }
+  let session: { lineId: string };
+  try {
+    session = JSON.parse(sessionCookie);
+  } catch {
+    return NextResponse.json({ error: "セッションが無効です" }, { status: 401 });
+  }
+
+  const body = await request.json().catch(() => ({}));
+  const enabled = body.enabled ?? body.isNotificationEnabled;
+  if (typeof enabled !== "boolean") {
+    return NextResponse.json({ error: "enabled を true/false で指定してください" }, { status: 400 });
+  }
+
+  await setListNotificationEnabled(session.lineId, decodedName, enabled);
+  return NextResponse.json({ success: true, isNotificationEnabled: enabled });
+}
 
 export async function DELETE(
   _request: NextRequest,

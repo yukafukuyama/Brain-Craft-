@@ -16,7 +16,7 @@ export default function EditWordPage() {
   const [answer, setAnswer] = useState("");
   const [listName, setListName] = useState("");
   const [newListName, setNewListName] = useState("");
-  const [lists, setLists] = useState<string[]>([]);
+  const [lists, setLists] = useState<{ name: string; isNotificationEnabled: boolean }[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -154,8 +154,8 @@ export default function EditWordPage() {
                 className="flex-1 px-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">未分類</option>
-                {lists.filter((l) => l !== "未分類").map((l) => (
-                  <option key={l} value={l}>{l}</option>
+                {lists.filter((l) => l.name !== "未分類").map((l) => (
+                  <option key={l.name} value={l.name}>{l.name}</option>
                 ))}
               </select>
               <input
