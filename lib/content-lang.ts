@@ -54,8 +54,9 @@ export function filterTranslationLines(
       if (locale === "ja" && contentLang === "ja") {
         return !t.startsWith("（訳）") && !t.startsWith("（日本語訳）");
       }
+      // zh選択＋中国語単語時は（日本語訳）を残す：中国語例文・問題の日本語訳は学習に必要
       if (locale === "zh" && contentLang === "zh") {
-        return !t.startsWith("（日本語訳）");
+        return true;
       }
       if (locale === "en" && contentLang === "en") {
         return !t.startsWith("（訳）") && !t.startsWith("（日本語訳）");
