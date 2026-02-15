@@ -1,9 +1,23 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "BrainCraft - 学習",
   description: "覚えられない単語を、日常の一部に！",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "BrainCraft",
+  },
+  manifest: "/manifest.json",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({
