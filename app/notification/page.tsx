@@ -147,15 +147,7 @@ export default function NotificationPage() {
                   <div className="space-y-2">
                     {[0, 1, 2, 3, 4].map((i) => (
                       <div key={i} className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleClearSlot(i)}
-                          aria-label={`スロット${i + 1}をクリア`}
-                          className="flex-shrink-0 min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center rounded-lg border border-gray-300 bg-gray-50 text-gray-600 active:bg-gray-200 transition-colors touch-manipulation"
-                        >
-                          <span className="text-xl font-light leading-none" aria-hidden>×</span>
-                        </button>
-                        <div className="relative flex-1 min-w-0">
+                        <div className="relative w-28 min-w-0 shrink-0">
                           <input
                             ref={(el) => { timeInputRefs.current[i] = el; }}
                             type="time"
@@ -183,6 +175,14 @@ export default function NotificationPage() {
                             </button>
                           )}
                         </div>
+                        <button
+                          type="button"
+                          onClick={() => handleClearSlot(i)}
+                          aria-label={`スロット${i + 1}をクリア`}
+                          className="flex-shrink-0 min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center rounded-lg border border-gray-300 bg-gray-50 text-gray-600 active:bg-gray-200 transition-colors touch-manipulation"
+                        >
+                          <span className="text-xl font-light leading-none" aria-hidden>×</span>
+                        </button>
                       </div>
                     ))}
                   </div>
