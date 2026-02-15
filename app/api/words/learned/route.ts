@@ -39,7 +39,15 @@ export async function GET() {
   const daysToMonday = day === 0 ? 6 : day - 1;
   startOfWeek.setDate(now.getDate() - daysToMonday);
   startOfWeek.setHours(0, 0, 0, 0);
-  const thisWeekCount = words.filter((w) => w.learnedAt && new Date(w.learnedAt) >= startOfWeek).length;
+
+  const isThisWeek = (learnedAtStr: string): boolean => {
+    const match = learnedAtStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!match) return false;
+    const [, y, m, d] = match;
+    const learnedDate = new Date(Number(y), Number(m) - 1, Number(d), 0, 0, 0, 0);
+    return learnedDate >= startOfWeek;
+  };
+  const thisWeekCount = words.filter((w) => w.learnedAt && isThisWeek(w.learnedAt)).length;
 
   return NextResponse.json({
     words: withFormatted,

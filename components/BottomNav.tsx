@@ -6,19 +6,21 @@ import { usePathname } from "next/navigation";
 type NavItem = {
   href: string;
   label: string;
-  icon: "home" | "book" | "bell" | "check" | "settings" | "quiz";
+  icon: "home" | "book" | "bell" | "check" | "settings" | "quiz" | "idioms";
 };
 
 const navItems3: NavItem[] = [
   { href: "/home", label: "ホーム", icon: "home" },
-  { href: "/words", label: "単語帳", icon: "book" },
+  { href: "/words", label: "単語", icon: "book" },
+  { href: "/idioms", label: "イディオム", icon: "idioms" },
   { href: "/learned", label: "習得", icon: "check" },
   { href: "/settings", label: "設定", icon: "settings" },
 ];
 
 const navItems4: NavItem[] = [
   { href: "/home", label: "ホーム", icon: "home" },
-  { href: "/words", label: "単語帳", icon: "book" },
+  { href: "/words", label: "単語", icon: "book" },
+  { href: "/idioms", label: "イディオム", icon: "idioms" },
   { href: "/quiz", label: "問題", icon: "quiz" },
   { href: "/learned", label: "習得", icon: "check" },
   { href: "/settings", label: "設定", icon: "settings" },
@@ -32,6 +34,7 @@ export function BottomNav({ variant = "3" }: { variant?: "3" | "4" }) {
     if (href === "/home") return pathname === "/home";
     if (href === "/notification") return pathname === "/notification";
     if (href === "/learned") return pathname === "/learned";
+    if (href === "/idioms") return pathname.startsWith("/idioms");
     if (href === "/quiz") return pathname.startsWith("/quiz");
     return pathname.startsWith(href);
   };
@@ -84,6 +87,13 @@ function NavIcon({ type, active }: { type: NavItem["icon"]; active: boolean }) {
         <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
           <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
           <polyline points="22 4 12 14.01 9 11.01" />
+        </svg>
+      );
+    case "idioms":
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
+          <path d="M4 6h16M4 12h10M4 18h14" />
+          <path d="M18 12l2 2-2 2" />
         </svg>
       );
     case "quiz":

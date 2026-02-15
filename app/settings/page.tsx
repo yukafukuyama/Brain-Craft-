@@ -58,7 +58,7 @@ export default function SettingsPage() {
               type="button"
               onClick={handleLogout}
               disabled={loggingOut}
-              className="text-sm text-red-600 hover:underline disabled:opacity-50"
+              className="font-bold text-base text-red-600 hover:underline disabled:opacity-50"
             >
               {loggingOut ? "ログアウト中..." : "ログアウト"}
             </button>

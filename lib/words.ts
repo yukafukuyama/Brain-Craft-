@@ -1,5 +1,7 @@
 export const DEFAULT_LIST_NAME = "未分類";
 
+export type WordType = "word" | "idiom";
+
 export type Word = {
   id: string;
   word: string;
@@ -9,6 +11,10 @@ export type Word = {
   answer?: string;
   listName?: string;
   learnedAt?: string; // "今日" | "昨日" | "2024-10-24" etc.
+  /** word=単語, idiom=イディオム */
+  type?: WordType;
+  /** イディオムの場合、構成する単語（例: "get back to" -> ["get","back","to"]） */
+  containedWords?: string[];
 };
 
 export const MOCK_WORDS: Word[] = [

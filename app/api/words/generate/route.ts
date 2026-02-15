@@ -23,7 +23,7 @@ function buildIdiomPrompt(generateQuiz: boolean, generateAnswer: boolean): strin
   ];
   if (generateQuiz) {
     jsonFields.push('"quiz": "穴埋め問題（対象言語。空欄は ___ で示す）"');
-    jsonFields.push('"quiz_jt": "穴埋め問題の日本語訳"');
+    jsonFields.push('"quiz_jt": "穴埋めの日本語訳（___は使わず、空欄を埋めた完全な文）"');
   }
   if (generateAnswer) {
     jsonFields.push('"answer": "穴埋めの答え（入力されたイディオムそのもの）"');
@@ -37,6 +37,10 @@ function buildIdiomPrompt(generateQuiz: boolean, generateAnswer: boolean): strin
 2. 化学反応（意味の変化）：組み合わさることで、なぜ今の意味になるかを「イメージ」で解説
 3. 使い分け：ビジネス、日常会話など、どんな場面で使うのが自然か明記
 4. 例文：イディオムのニュアンスが一番伝わるシチュエーションで作成
+
+【和訳について】
+example_jt（例文の日本語訳）および quiz_jt（穴埋め問題の日本語訳）は、省略や要約をせず、全文を漏れなく書いてください。
+quiz_jt は穴埋め部分（___）を含めず、空欄を埋めた状態の文を日本語で完全に書いてください。
 
 【出力フォーマット】
 以下のJSON形式のみで返してください。他のテキストは含めないでください。
@@ -56,7 +60,8 @@ function buildSystemPrompt(generateQuiz: boolean, generateAnswer: boolean): stri
 英語、韓国語、中国語、フランス語、スペイン語など、あらゆる言語に対応してください。
 
 【日本語訳の必須追加】
-例文（example）には、必ずその日本語訳（example_jt）をセットで付けてください。`;
+例文（example）には、必ずその日本語訳（example_jt）をセットで付けてください。
+quiz_jt（穴埋めの日本語訳）は、___ は使わず、空欄を埋めた状態の完全な文を書いてください。`;
 
   const quizSection = generateQuiz
     ? `穴埋め問題（quiz）を作成する場合も、必ずその日本語訳（quiz_jt）をセットで付けてください。`
@@ -69,7 +74,7 @@ function buildSystemPrompt(generateQuiz: boolean, generateAnswer: boolean): stri
   ];
   if (generateQuiz) {
     jsonFields.push('"quiz": "穴埋め問題（対象言語。空欄は ___ で示す）"');
-    jsonFields.push('"quiz_jt": "穴埋め問題の日本語訳"');
+    jsonFields.push('"quiz_jt": "穴埋めの日本語訳（___は使わず、空欄を埋めた完全な文）"');
   }
   if (generateAnswer) {
     jsonFields.push('"answer": "穴埋めの答え（入力された単語そのもの）"');
@@ -86,10 +91,14 @@ ${quizSection}
 }
 
 export async function POST(request: NextRequest) {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) {
+    const hint =
+      process.env.NODE_ENV === "development"
+        ? " .env.local に GEMINI_API_KEY を追加し、サーバーを再起動してください。.env.development.local に GEMINI_API_KEY= が空で入っていると上書きされます。"
+        : "";
     return NextResponse.json(
-      { error: "GEMINI_API_KEY が設定されていません" },
+      { error: `GEMINI_API_KEY が設定されていません${hint}` },
       { status: 500 }
     );
   }

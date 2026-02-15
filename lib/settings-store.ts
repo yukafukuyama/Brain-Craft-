@@ -8,6 +8,8 @@ export type NotificationSettings = {
   times?: string[]; // "HH:mm" 最大5つ。空配列 = 通知なし
   lastSentDate?: string;
   lastSentTimes?: string[]; // 同日に送信済みの時刻
+  /** イディオムの通知を送るか（未設定は true） */
+  idiomNotificationsEnabled?: boolean;
 };
 
 type UserSettings = { notification: NotificationSettings };

@@ -35,8 +35,9 @@ export async function POST(request: NextRequest) {
   }
   const body = await request.json();
   const enabled = body.enabled;
-  const updates: { enabled?: boolean; times?: string[] } = {};
+  const updates: { enabled?: boolean; times?: string[]; idiomNotificationsEnabled?: boolean } = {};
   if (typeof enabled === "boolean") updates.enabled = enabled;
+  if (typeof body.idiomNotificationsEnabled === "boolean") updates.idiomNotificationsEnabled = body.idiomNotificationsEnabled;
   if (Array.isArray(body.times)) {
     updates.times = body.times
       .map((t: unknown) => String(t ?? "").trim())

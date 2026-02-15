@@ -3,6 +3,8 @@
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { saveQuizProgress } from "@/lib/quiz-progress";
+import { WeeklyProgressCard } from "@/components/WeeklyProgressCard";
 
 type QuizWord = {
   id: string;
@@ -26,6 +28,7 @@ function QuizTestContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const listParam = searchParams.get("list") ?? "";
+  const typeParam = (searchParams.get("type") ?? "both") as "word" | "idiom" | "both";
   const [status, setStatus] = useState<"loading" | "no-words" | "quiz" | "done">("loading");
   const [quizWords, setQuizWords] = useState<QuizWord[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -33,7 +36,8 @@ function QuizTestContent() {
 
   const loadWords = useCallback(() => {
     setStatus("loading");
-    fetch("/api/words", { cache: "no-store" })
+    const url = typeParam !== "both" ? `/api/words?type=${typeParam}` : "/api/words";
+    fetch(url, { cache: "no-store" })
       .then((res) => {
         if (res.status === 401) {
           router.replace("/");
@@ -64,7 +68,7 @@ function QuizTestContent() {
         setRevealed(false);
       })
       .catch(() => setStatus("no-words"));
-  }, [router, listParam]);
+  }, [router, listParam, typeParam]);
 
   useEffect(() => {
     loadWords();
@@ -80,6 +84,7 @@ function QuizTestContent() {
 
   const handleNext = () => {
     if (isLastCard) {
+      saveQuizProgress(total);
       setStatus("done");
     } else {
       setCurrentIndex((i) => i + 1);
@@ -115,8 +120,8 @@ function QuizTestContent() {
             {currentIndex + 1} / {total}
           </p>
 
-          <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-sm min-h-[200px] flex flex-col justify-between">
-            <div className="space-y-4">
+          <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-sm min-h-[200px] max-h-[60vh] flex flex-col">
+            <div className="space-y-4 overflow-y-auto flex-1 min-h-0">
               {currentWord.question ? (
                 <div className="space-y-2">
                   {currentWord.question.split("\n").map((line, i) => (
@@ -142,9 +147,13 @@ function QuizTestContent() {
                 <div className="pt-4 border-t border-gray-100 space-y-2">
                   <p className="text-xl font-bold text-blue-600">{currentWord.word}</p>
                   {currentWord.example && (
-                    <p className="text-sm text-gray-600 italic">
-                      {currentWord.example.split("\n")[0]}
-                    </p>
+                    <div className="text-sm text-gray-600 space-y-1">
+                      {currentWord.example.split("\n").map((line, i) => (
+                        <p key={i} className={i === 0 ? "italic" : ""}>
+                          {line}
+                        </p>
+                      ))}
+                    </div>
                   )}
                 </div>
               )}
@@ -180,14 +189,17 @@ function QuizTestContent() {
       )}
 
       {status === "done" && (
-        <div className="text-center py-16 space-y-8 max-w-lg mx-auto">
-          <h2 className="text-2xl font-bold text-gray-900">お疲れ様でした！</h2>
-          <p className="text-gray-600">
-            {total} 枚のカードを復習しました
-          </p>
+        <div className="space-y-8 max-w-lg mx-auto">
+          <div className="text-center py-8">
+            <h2 className="text-2xl font-bold text-gray-900">お疲れ様でした！</h2>
+            <p className="text-gray-600 mt-2">
+              {total} 枚のカードを復習しました
+            </p>
+          </div>
+          <WeeklyProgressCard />
           <Link
             href="/quiz"
-            className="inline-block w-full py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700"
+            className="block w-full py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 text-center"
           >
             リスト一覧に戻る
           </Link>

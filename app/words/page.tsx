@@ -1,21 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { BottomNav } from "@/components/BottomNav";
+import { WordDetailCard } from "@/components/WordDetailCard";
 import type { Word } from "@/lib/words";
 
-export default function WordsPage() {
+function WordsContent() {
   const router = useRouter();
-  const [search, setSearch] = useState("");
+  const searchParams = useSearchParams();
+  const qParam = searchParams.get("q") ?? "";
+  const [search, setSearch] = useState(qParam);
   const [filterList, setFilterList] = useState<string>("");
   const [lists, setLists] = useState<{ name: string; isNotificationEnabled: boolean }[]>([]);
   const [words, setWords] = useState<Word[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedWord, setSelectedWord] = useState<Word | null>(null);
 
   useEffect(() => {
-    fetch("/api/words")
+    const q = searchParams.get("q") ?? "";
+    setSearch(q);
+  }, [searchParams]);
+
+  useEffect(() => {
+    fetch("/api/words?type=word", { cache: "no-store" })
       .then((res) => {
         if (res.status === 401) {
           router.replace("/");
@@ -67,7 +76,7 @@ export default function WordsPage() {
     <div className="min-h-screen bg-white pb-20">
       {/* Header */}
       <header className="px-4 pt-6 pb-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">登録単語</h1>
+        <h1 className="text-xl font-bold text-gray-900">単語一覧</h1>
         <div className="flex items-center gap-1">
           <Link
             href="/home"
@@ -145,7 +154,10 @@ export default function WordsPage() {
         <ul className="divide-y divide-gray-200">
           {filteredWords.map((item) => (
             <li key={item.id} className="py-4 flex items-start justify-between gap-4">
-              <div className="flex-1 min-w-0">
+              <div
+                className="flex-1 min-w-0 cursor-pointer"
+                onClick={() => setSelectedWord(item)}
+              >
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-gray-900">{item.word}</span>
                   {(item.listName?.trim() || "未分類") !== "未分類" && (
@@ -153,16 +165,20 @@ export default function WordsPage() {
                       {item.listName}
                     </span>
                   )}
-                  <Link
-                    href={`/words/${item.id}/edit`}
-                    className="text-blue-600 p-1"
-                    aria-label="編集"
+                  <span
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                    </svg>
-                  </Link>
+                    <Link
+                      href={`/words/${item.id}/edit`}
+                      className="text-blue-600 p-1 inline-block"
+                      aria-label="編集"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                    </Link>
+                  </span>
                 </div>
                 <p className="text-sm text-gray-600 mt-0.5">{item.meaning}</p>
                 <p className="text-sm text-gray-500 mt-1 italic">
@@ -171,7 +187,7 @@ export default function WordsPage() {
               </div>
               <button
                 onClick={() => handleLearned(item.id)}
-                className="shrink-0 px-3 py-1.5 bg-sky-100 text-blue-600 text-sm font-medium rounded-lg hover:bg-sky-200 transition-colors"
+                className="shrink-0 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition-colors"
               >
                 覚えた！
               </button>
@@ -181,7 +197,19 @@ export default function WordsPage() {
         )}
       </main>
 
+      {selectedWord && (
+        <WordDetailCard word={selectedWord} onClose={() => setSelectedWord(null)} />
+      )}
+
       <BottomNav variant="4" />
     </div>
+  );
+}
+
+export default function WordsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><p className="text-gray-500">読み込み中...</p></div>}>
+      <WordsContent />
+    </Suspense>
   );
 }

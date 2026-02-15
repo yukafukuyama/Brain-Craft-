@@ -12,7 +12,6 @@ export default function LearnedPage() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [words, setWords] = useState<LearnedWord[]>([]);
-  const [thisWeekCount, setThisWeekCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,13 +19,12 @@ export default function LearnedPage() {
       .then((res) => {
         if (res.status === 401) {
           router.replace("/");
-          return { words: [], stats: { thisWeekCount: 0 } };
+          return { words: [] };
         }
         return res.json();
       })
       .then((data) => {
         setWords(data.words ?? []);
-        setThisWeekCount(data.stats?.thisWeekCount ?? 0);
       })
       .catch(() => setWords([]))
       .finally(() => setLoading(false));
@@ -57,16 +55,6 @@ export default function LearnedPage() {
       {/* Header */}
       <header className="px-4 pt-6 pb-4">
         <h1 className="text-xl font-bold text-gray-900 text-center">習得済み単語</h1>
-        <div className="flex items-center justify-center gap-2 mt-2">
-          <p className="text-gray-700">
-            合計 <span className="font-bold text-green-600">{words.length}</span> 単語をマスターしました!
-          </p>
-          <span className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="#22c55e">
-              <path d="M12 2L15 8L22 9L17 14L18 21L12 18L6 21L7 14L2 9L9 8L12 2Z" />
-            </svg>
-          </span>
-        </div>
       </header>
 
       {/* Search */}
@@ -85,23 +73,18 @@ export default function LearnedPage() {
             placeholder="習得した単語を検索..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-green-500"
+            className="w-full pl-12 pr-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-amber-500"
           />
         </div>
       </div>
 
       {/* Progress Card */}
       <div className="px-4 mb-6">
-        <div className="bg-green-50 rounded-2xl p-4 flex items-center gap-4">
-          <span className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="#eab308">
-              <path d="M12 2L15 8L22 9L17 14L18 21L12 18L6 21L7 14L2 9L9 8L12 2Z" />
-            </svg>
-          </span>
-          <div>
-            <p className="font-bold text-gray-800">素晴らしい進捗です!</p>
-            <p className="text-sm text-gray-600">今週は新たに{thisWeekCount}単語を習得しました。</p>
-          </div>
+        <div className="bg-amber-50 rounded-2xl p-4 flex items-center justify-center gap-2">
+          <p className="font-normal text-gray-800 text-center">
+            合計 <span className="font-extrabold text-4xl text-red-600">{words.length}</span> 単語をマスターしました!
+            <span className="text-4xl ml-1">🎊</span>
+          </p>
         </div>
       </div>
 
@@ -125,8 +108,8 @@ export default function LearnedPage() {
                 </Link>
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="text-xs text-gray-400">{item.learnedAtDisplay ?? item.learnedAt}</span>
-                  <span className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
+                  <span className="w-8 h-8 rounded-full bg-orange-200 flex items-center justify-center">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c2410c" strokeWidth="2">
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                   </span>
@@ -164,8 +147,8 @@ export default function LearnedPage() {
                   <p className="text-sm text-gray-600">{item.meaning}</p>
                 </Link>
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
+                  <span className="w-8 h-8 rounded-full bg-orange-200 flex items-center justify-center">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c2410c" strokeWidth="2">
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                   </span>
@@ -191,7 +174,7 @@ export default function LearnedPage() {
         </section>
 
         {words.length > 3 && (
-        <button className="w-full py-3 text-green-600 font-medium flex items-center justify-center gap-2">
+        <button className="w-full py-3 text-amber-600 font-medium flex items-center justify-center gap-2">
           さらに読み込む
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polyline points="6 9 12 15 18 9" />

@@ -104,7 +104,6 @@ export default function HomePage() {
       setQuestion("");
       setAnswer("");
       setNewListName("");
-      router.push("/words");
     } catch {
       setError("通信エラーが発生しました");
     } finally {
@@ -117,7 +116,10 @@ export default function HomePage() {
       {/* Header */}
       <header className="px-4 pt-6 pb-4">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">BrainCraft</h1>
+          <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <span>BrainCraft</span>
+            <span className="text-2xl">🧠</span>
+          </h1>
           <p className="text-sm text-gray-500">中々覚えられない単語を、日常の一部に！</p>
         </div>
       </header>
@@ -219,8 +221,8 @@ export default function HomePage() {
               placeholder="例: She showed great resilience."
               value={example}
               onChange={(e) => setExample(e.target.value)}
-              rows={3}
-              className="w-full px-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-blue-500 resize-none"
+              rows={6}
+              className="w-full px-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-blue-500 resize-y min-h-[120px]"
             />
           </div>
           <div>
@@ -229,8 +231,8 @@ export default function HomePage() {
               placeholder="例: 回復力、弾力性を表す英単語は？"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-              rows={3}
-              className="w-full px-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-blue-500 resize-y min-h-[80px]"
+              rows={5}
+              className="w-full px-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-blue-500 resize-y min-h-[100px]"
             />
           </div>
           <div>
@@ -256,7 +258,7 @@ export default function HomePage() {
 
           <Link
             href="/notification"
-            className="w-full py-3 border border-gray-300 text-gray-700 font-medium rounded-xl flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
+            className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-xl flex items-center justify-center gap-2 transition-colors"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />

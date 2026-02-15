@@ -49,7 +49,10 @@ export default async function SplashPage({
         {/* Logo & Title */}
         <div className="flex flex-col items-center text-center">
           <Logo size={160} className="mb-4" />
-          <h1 className="text-5xl font-bold text-gray-800">BrainCraft</h1>
+          <h1 className="text-5xl font-bold text-gray-800 flex items-center justify-center gap-3">
+            <span>BrainCraft</span>
+            <span>🧠</span>
+          </h1>
           <p className="text-sm text-gray-500 mt-1">学習</p>
         </div>
 

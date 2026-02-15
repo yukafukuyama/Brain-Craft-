@@ -1,4 +1,4 @@
-import type { Word } from "./words";
+import type { Word, WordType } from "./words";
 import { DEFAULT_LIST_NAME } from "./words";
 import { storageGet, storageSet } from "./storage";
 
@@ -13,11 +13,20 @@ async function saveWords(data: Record<string, Word[]>): Promise<void> {
   await storageSet(WORDS_KEY, data);
 }
 
-export async function addWord(lineId: string, word: Omit<Word, "id">): Promise<Word> {
+export async function addWord(
+  lineId: string,
+  word: Omit<Word, "id"> & { type?: WordType; containedWords?: string[] }
+): Promise<Word> {
   const data = await loadWords();
   const list = data[lineId] ?? [];
   const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-  const newWord: Word = { ...word, id, listName: word.listName?.trim() || DEFAULT_LIST_NAME };
+  const newWord: Word = {
+    ...word,
+    id,
+    listName: word.listName?.trim() || DEFAULT_LIST_NAME,
+    type: word.type ?? "word",
+    containedWords: word.containedWords,
+  };
   list.unshift(newWord);
   data[lineId] = list;
   await saveWords(data);
@@ -29,10 +38,36 @@ export async function getWords(lineId: string): Promise<Word[]> {
   return data[lineId] ?? [];
 }
 
+/** type でフィルタ（指定なしは全件） */
+export async function getWordsByType(lineId: string, type?: WordType): Promise<Word[]> {
+  const list = await getWords(lineId);
+  if (!type) return list;
+  return list.filter((w) => (w.type ?? "word") === type);
+}
+
+/** この単語を含むイディオム一覧 */
+export async function getIdiomsContainingWord(lineId: string, wordText: string): Promise<Word[]> {
+  const list = await getWords(lineId);
+  const lower = wordText.trim().toLowerCase();
+  if (!lower) return [];
+  return list.filter((w) => {
+    if ((w.type ?? "word") !== "idiom") return false;
+    const cw = w.containedWords ?? w.word.split(/\s+/).map((s) => s.trim().toLowerCase()).filter(Boolean);
+    return cw.some((t) => t === lower);
+  });
+}
+
+/** 単語テキストに完全一致する単語（type=word）を取得 */
+export async function getWordByExactText(lineId: string, wordText: string): Promise<Word | null> {
+  const list = await getWords(lineId);
+  const lower = wordText.trim().toLowerCase();
+  return list.find((w) => (w.type ?? "word") === "word" && w.word.trim().toLowerCase() === lower) ?? null;
+}
+
 export async function updateWord(
   lineId: string,
   wordId: string,
-  updates: Partial<Pick<Word, "word" | "meaning" | "example" | "question" | "answer" | "listName">>
+  updates: Partial<Pick<Word, "word" | "meaning" | "example" | "question" | "answer" | "listName" | "type" | "containedWords">>
 ): Promise<boolean> {
   const data = await loadWords();
   const list = data[lineId] ?? [];
@@ -44,6 +79,8 @@ export async function updateWord(
   if (updates.question !== undefined) word.question = updates.question;
   if (updates.answer !== undefined) word.answer = updates.answer;
   if (updates.listName !== undefined) word.listName = updates.listName?.trim() || DEFAULT_LIST_NAME;
+  if (updates.type !== undefined) word.type = updates.type;
+  if (updates.containedWords !== undefined) word.containedWords = updates.containedWords;
   await saveWords(data);
   return true;
 }

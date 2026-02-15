@@ -22,5 +22,5 @@ export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
   cookieStore.set("braincraft_session", session, getSessionCookieOptions(false));
 
-  return NextResponse.redirect(new URL("/home", request.url));
+  return NextResponse.redirect(new URL("/auth/success", request.url));
 }

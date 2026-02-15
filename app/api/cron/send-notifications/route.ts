@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUsersToNotify, markNotificationSent } from "@/lib/settings-store";
+import { getUsersToNotify, markNotificationSent, getNotificationSettings } from "@/lib/settings-store";
 import { getWords } from "@/lib/words-store";
 import { getListNotificationSettings } from "@/lib/list-settings-store";
 import { sendPushMessage } from "@/lib/line-messaging";
@@ -37,9 +37,13 @@ export async function GET(request: NextRequest) {
     const allWords = await getWords(lineId);
     const listNames = [...new Set(allWords.map((w) => w.listName?.trim() || "未分類"))];
     const notifSettings = await getListNotificationSettings(lineId, listNames);
+    const notificationSettings = await getNotificationSettings(lineId);
+    const idiomEnabled = notificationSettings.idiomNotificationsEnabled !== false;
     const words = allWords.filter((w) => {
       const listName = w.listName?.trim() || "未分類";
-      return notifSettings[listName] ?? true;
+      if (!(notifSettings[listName] ?? true)) return false;
+      if ((w.type ?? "word") === "idiom" && !idiomEnabled) return false;
+      return true;
     });
 
     if (words.length === 0) {
@@ -49,8 +53,7 @@ export async function GET(request: NextRequest) {
     }
 
     const blocks = words.map((w) => {
-      const listLabel = (w.listName?.trim() || "未分類") !== "未分類" ? `リスト名：${w.listName}\n` : "";
-      const parts = [`${listLabel}【${w.word}】`];
+      const parts = [`【${w.word}】`];
       if (w.meaning) parts.push(`意味: ${w.meaning}`);
       if (w.example) parts.push(`例文: ${w.example}`);
       if (w.question) parts.push(`問題: ${w.question}`);

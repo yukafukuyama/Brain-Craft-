@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { addWord } from "@/lib/words-store";
 import { sendPushMessage } from "@/lib/line-messaging";
+import { getNotificationSettings } from "@/lib/settings-store";
 
 export async function POST(request: NextRequest) {
   const cookieStore = await cookies();
@@ -24,6 +25,11 @@ export async function POST(request: NextRequest) {
   const question = String(body.question ?? "").trim();
   const answer = String(body.answer ?? "").trim();
   const listName = String(body.listName ?? "").trim();
+  const isIdiom = word.includes(" ");
+  const type = isIdiom ? ("idiom" as const) : ("word" as const);
+  const containedWords = isIdiom
+    ? word.split(/\s+/).map((s) => s.trim().toLowerCase()).filter(Boolean)
+    : undefined;
 
   if (!word) {
     return NextResponse.json({ error: "単語を入力してください" }, { status: 400 });
@@ -38,6 +44,8 @@ export async function POST(request: NextRequest) {
       question: question || undefined,
       answer: answer || undefined,
       listName: listName || undefined,
+      type,
+      containedWords,
     });
   } catch (err) {
     console.error("Failed to save word:", err);
@@ -53,15 +61,19 @@ export async function POST(request: NextRequest) {
 
   const channelAccessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
   if (channelAccessToken) {
-    const effectiveList = listName || "未分類";
-    const listLabel = effectiveList !== "未分類" ? `リスト名：${effectiveList}\n` : "";
-    const lines = [`${listLabel}【${word}】`];
-    if (meaning) lines.push(`意味: ${meaning}`);
-    if (example) lines.push(`例文: ${example}`);
-    if (question) lines.push(`問題: ${question}`);
-    if (answer) lines.push(`答え: ${answer}`);
-    const message = lines.join("\n");
-    await sendPushMessage(channelAccessToken, session.lineId, message);
+    const notificationSettings = await getNotificationSettings(session.lineId);
+    const idiomEnabled = notificationSettings.idiomNotificationsEnabled !== false;
+    if (isIdiom && !idiomEnabled) {
+      // イディオム通知がオフの場合は送信しない
+    } else {
+      const lines = [`【${word}】`];
+      if (meaning) lines.push(`意味: ${meaning}`);
+      if (example) lines.push(`例文: ${example}`);
+      if (question) lines.push(`問題: ${question}`);
+      if (answer) lines.push(`答え: ${answer}`);
+      const message = lines.join("\n");
+      await sendPushMessage(channelAccessToken, session.lineId, message);
+    }
   }
 
   return NextResponse.json({ success: true, word: newWord });

@@ -21,6 +21,9 @@ export default function EditWordPage() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
+  const [itemType, setItemType] = useState<"word" | "idiom">("word");
+  const [idiomsContaining, setIdiomsContaining] = useState<{ id: string; word: string }[]>([]);
+  const [linkedWords, setLinkedWords] = useState<{ id: string; word: string }[]>([]);
 
   useEffect(() => {
     fetch(`/api/words/${id}`)
@@ -40,6 +43,9 @@ export default function EditWordPage() {
           setQuestion(data.question ?? "");
           setAnswer(data.answer ?? "");
           setListName(data.listName ?? "");
+          setItemType((data.type ?? "word") as "word" | "idiom");
+          setIdiomsContaining(data.idiomsContaining ?? []);
+          setLinkedWords(data.linkedWords ?? []);
         } else {
           setError("単語が見つかりません");
         }
@@ -58,22 +64,28 @@ export default function EditWordPage() {
   const handleSave = async () => {
     setSaving(true);
     setError("");
+    const isIdiom = word.trim().includes(" ");
+    const payload: Record<string, unknown> = {
+      word: word.trim(),
+      meaning: meaning.trim(),
+      example: example.trim(),
+      question: question.trim(),
+      answer: answer.trim(),
+      listName: (newListName.trim() || listName || "").trim() || undefined,
+      type: isIdiom ? "idiom" : "word",
+    };
+    if (isIdiom) {
+      payload.containedWords = word.trim().split(/\s+/).map((s) => s.trim().toLowerCase()).filter(Boolean);
+    }
     try {
       const res = await fetch(`/api/words/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          word: word.trim(),
-          meaning: meaning.trim(),
-          example: example.trim(),
-          question: question.trim(),
-          answer: answer.trim(),
-          listName: (newListName.trim() || listName || "").trim() || undefined,
-        }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (res.ok) {
-        router.push("/words");
+        router.push(isIdiom ? "/idioms" : "/words");
       } else {
         setError(data.error || "保存に失敗しました");
       }
@@ -91,7 +103,7 @@ export default function EditWordPage() {
     try {
       const res = await fetch(`/api/words/${id}`, { method: "DELETE" });
       if (res.ok) {
-        router.push("/words");
+        router.push(itemType === "idiom" ? "/idioms" : "/words");
       } else {
         const data = await res.json();
         setError(data.error || "削除に失敗しました");
@@ -115,8 +127,8 @@ export default function EditWordPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-4">
         <p className="text-red-600 mb-4">{error}</p>
-        <Link href="/words" className="text-blue-600 underline">
-          単語一覧に戻る
+        <Link href={itemType === "idiom" ? "/idioms" : "/words"} className="text-blue-600 underline">
+          {itemType === "idiom" ? "イディオム一覧" : "単語一覧"}に戻る
         </Link>
       </div>
     );
@@ -126,10 +138,10 @@ export default function EditWordPage() {
     <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
       <header className="px-4 py-4 flex items-center justify-between border-b border-gray-200">
-        <Link href="/words" className="text-blue-600 font-medium">
+        <Link href={itemType === "idiom" ? "/idioms" : "/words"} className="text-blue-600 font-medium">
           キャンセル
         </Link>
-        <h1 className="text-lg font-bold text-gray-900">単語を編集</h1>
+        <h1 className="text-lg font-bold text-gray-900">{itemType === "idiom" ? "イディオムを編集" : "単語を編集"}</h1>
         <button
           onClick={handleSave}
           disabled={saving}
@@ -170,8 +182,38 @@ export default function EditWordPage() {
               />
             </div>
           </div>
+          {itemType === "word" && idiomsContaining.length > 0 && (
+            <div className="p-4 bg-amber-50 rounded-xl border border-amber-100">
+              <h3 className="text-sm font-medium text-gray-800 mb-2">この単語を含むイディオム</h3>
+              <ul className="space-y-1">
+                {idiomsContaining.map((i) => (
+                  <li key={i.id}>
+                    <Link href={`/words/${i.id}/edit`} className="text-blue-600 hover:underline">
+                      {i.word}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {itemType === "idiom" && linkedWords.length > 0 && (
+            <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
+              <h3 className="text-sm font-medium text-gray-800 mb-2">構成単語（クリックで単語詳細へ）</h3>
+              <div className="flex flex-wrap gap-2">
+                {linkedWords.map((w) => (
+                  <Link
+                    key={w.id}
+                    href={`/words/${w.id}/edit`}
+                    className="text-sm px-3 py-1.5 bg-white rounded-lg border border-blue-200 text-blue-700 hover:bg-blue-100"
+                  >
+                    {w.word}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">単語</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{itemType === "idiom" ? "イディオム" : "単語"}</label>
             <div className="relative">
               <input
                 type="text"

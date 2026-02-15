@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { getWords } from "@/lib/words-store";
+import { getWords, getWordsByType } from "@/lib/words-store";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get("braincraft_session")?.value;
   if (!sessionCookie) {
@@ -16,7 +16,8 @@ export async function GET() {
     return NextResponse.json({ error: "セッションが無効です" }, { status: 401 });
   }
 
-  const words = await getWords(session.lineId);
+  const type = request.nextUrl.searchParams.get("type") as "word" | "idiom" | null;
+  const words = type ? await getWordsByType(session.lineId, type) : await getWords(session.lineId);
   return NextResponse.json({ words }, {
     headers: { "Cache-Control": "no-store, max-age=0" },
   });

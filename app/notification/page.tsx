@@ -22,6 +22,7 @@ function isValidTime(s: string): boolean {
 
 export default function NotificationPage() {
   const [notificationEnabled, setNotificationEnabled] = useState(false);
+  const [idiomNotificationsEnabled, setIdiomNotificationsEnabled] = useState(true);
   const [notificationTimes, setNotificationTimes] = useState<(string | null)[]>(
     Array(SLOT_COUNT).fill(null)
   );
@@ -34,8 +35,9 @@ export default function NotificationPage() {
   useEffect(() => {
     fetch("/api/settings/notification")
       .then((res) => (res.ok ? res.json() : { enabled: false, times: [] }))
-      .then((data: { enabled?: boolean; time?: string; times?: string[] }) => {
+      .then((data: { enabled?: boolean; time?: string; times?: string[]; idiomNotificationsEnabled?: boolean }) => {
         setNotificationEnabled(data.enabled ?? false);
+        setIdiomNotificationsEnabled(data.idiomNotificationsEnabled !== false);
         const ts = data.times ?? (data.time ? [data.time] : []);
         const filled: (string | null)[] = Array(SLOT_COUNT).fill(null);
         ts.slice(0, SLOT_COUNT).forEach((t, i) => {
@@ -62,7 +64,7 @@ export default function NotificationPage() {
     return [...new Set(dups)];
   };
 
-  const handleSaveNotification = async (overrides?: { enabled?: boolean; times?: (string | null)[] }) => {
+  const handleSaveNotification = async (overrides?: { enabled?: boolean; times?: (string | null)[]; idiomNotificationsEnabled?: boolean }) => {
     const times = overrides?.times ?? notificationTimes;
     const valid = getValidTimes(times);
     const dups = checkDuplicates(times);
@@ -81,11 +83,13 @@ export default function NotificationPage() {
         body: JSON.stringify({
           enabled,
           times: valid, // 空の場合は [] で通知なし
+          idiomNotificationsEnabled: overrides?.idiomNotificationsEnabled ?? idiomNotificationsEnabled,
         }),
       });
       if (res.ok) {
         if (overrides?.enabled !== undefined) setNotificationEnabled(overrides.enabled);
         if (overrides?.times !== undefined) setNotificationTimes(overrides.times);
+        if (overrides?.idiomNotificationsEnabled !== undefined) setIdiomNotificationsEnabled(overrides.idiomNotificationsEnabled);
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
       }
@@ -229,6 +233,40 @@ export default function NotificationPage() {
               >
                 今すぐ送信してテスト
               </button>
+
+              <div className="flex items-center justify-between py-3 px-4 bg-white rounded-lg border border-gray-200">
+                <span className="text-gray-700 font-medium">イディオムの通知</span>
+                <div className="flex rounded-lg overflow-hidden border border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIdiomNotificationsEnabled(true);
+                      handleSaveNotification({ enabled: notificationEnabled, times: notificationTimes, idiomNotificationsEnabled: true });
+                    }}
+                    className={`px-4 py-2 text-sm font-medium transition-colors ${
+                      idiomNotificationsEnabled
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                  >
+                    ON
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIdiomNotificationsEnabled(false);
+                      handleSaveNotification({ enabled: notificationEnabled, times: notificationTimes, idiomNotificationsEnabled: false });
+                    }}
+                    className={`px-4 py-2 text-sm font-medium transition-colors ${
+                      !idiomNotificationsEnabled
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                  >
+                    OFF
+                  </button>
+                </div>
+              </div>
 
               <Link
                 href="/lists"
