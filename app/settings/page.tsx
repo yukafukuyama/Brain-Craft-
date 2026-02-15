@@ -64,8 +64,8 @@ export default function SettingsPage() {
 
         <div className="pt-8 flex flex-col items-center gap-2">
           <Logo size={48} />
-          <p className="text-xs text-gray-400">YUKA FUKUYAMA</p>
           <p className="text-xs text-gray-400">© 2026 BRAINCRAFT</p>
+          <p className="text-xs text-gray-400">YUKA FUKUYAMA</p>
         </div>
       </main>
 
