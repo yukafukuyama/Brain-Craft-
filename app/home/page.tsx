@@ -27,6 +27,7 @@ export default function HomePage() {
   const [newListName, setNewListName] = useState("");
   const [lists, setLists] = useState<{ name: string; isNotificationEnabled: boolean }[]>([]);
   const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -35,6 +36,36 @@ export default function HomePage() {
       .then((data) => setLists(data.lists ?? []))
       .catch(() => setLists([]));
   }, []);
+
+  const handleAiGenerate = async () => {
+    const trimmed = word.trim();
+    if (!trimmed) {
+      setError("先に単語を入力してください");
+      return;
+    }
+    setError("");
+    setGenerating(true);
+    try {
+      const res = await fetch("/api/words/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ word: trimmed }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "生成に失敗しました");
+        return;
+      }
+      setMeaning(data.meaning ?? "");
+      setExample(data.example ?? "");
+      setQuestion(data.question ?? "");
+      setAnswer(data.answer ?? trimmed);
+    } catch {
+      setError("通信エラーが発生しました");
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const handleRegister = async () => {
     setError("");
@@ -118,13 +149,33 @@ export default function HomePage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">単語</label>
-            <input
-              type="text"
-              placeholder="例: Resilience"
-              value={word}
-              onChange={(e) => setWord(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-blue-500"
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="例: Resilience"
+                value={word}
+                onChange={(e) => setWord(e.target.value)}
+                className="flex-1 px-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                type="button"
+                onClick={handleAiGenerate}
+                disabled={generating || !word.trim()}
+                className="flex-shrink-0 px-4 py-3 bg-blue-100 text-blue-700 font-medium rounded-xl hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 min-w-[120px] justify-center"
+              >
+                {generating ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden>
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeOpacity="0.25" />
+                      <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" strokeOpacity="0.75" />
+                    </svg>
+                    生成中
+                  </>
+                ) : (
+                  <>AIで自動入力</>
+                )}
+              </button>
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">意味</label>
