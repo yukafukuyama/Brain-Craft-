@@ -4,6 +4,16 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { BottomNav } from "@/components/BottomNav";
 
+const LINE_ADD_FRIEND_URL = (() => {
+  const url = process.env.NEXT_PUBLIC_LINE_ADD_FRIEND_URL?.trim();
+  if (!url || !url.startsWith("https://line.me")) return "";
+  return url;
+})();
+
+const LINE_DEEP_LINK = LINE_ADD_FRIEND_URL
+  ? LINE_ADD_FRIEND_URL.replace(/^https:\/\/line\.me\/R?\/?/, "line://")
+  : "";
+
 export default function NotificationPage() {
   const [notificationEnabled, setNotificationEnabled] = useState(false);
   const [notificationTimes, setNotificationTimes] = useState<string[]>(["08:00", "", ""]);
@@ -132,6 +142,32 @@ export default function NotificationPage() {
             </>
           )}
         </section>
+
+        {LINE_ADD_FRIEND_URL && (
+          <section className="space-y-2">
+            <h2 className="text-sm font-medium text-gray-500">LINE通知を受け取る</h2>
+            <p className="text-sm text-gray-600">
+              友だち追加すると、設定した時刻に復習通知がLINEに届きます。
+            </p>
+            <a
+              href={LINE_ADD_FRIEND_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => {
+                if (LINE_DEEP_LINK && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+                  e.preventDefault();
+                  window.location.href = LINE_DEEP_LINK;
+                }
+              }}
+              className="flex w-full items-center justify-center gap-2 py-4 bg-[#00c300] hover:bg-[#00a800] text-white font-medium rounded-xl transition-colors"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755z" />
+              </svg>
+              LINE通知の登録（友だち追加）
+            </a>
+          </section>
+        )}
 
         <div className="space-y-2 text-sm text-gray-500">
           <p>※ cron-job.org でcronを設定すると、指定時刻に自動送信されます</p>
