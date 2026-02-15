@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-export default function QuizTestPage() {
+function QuizTestContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const listParam = searchParams.get("list") ?? "";
@@ -69,5 +69,23 @@ export default function QuizTestPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function QuizTestPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white px-4 pt-12 pb-20">
+        <Link href="/quiz" className="inline-flex items-center gap-2 text-blue-600 hover:underline mb-6">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+          問題に戻る
+        </Link>
+        <p className="text-center text-gray-500 py-12">読み込み中...</p>
+      </div>
+    }>
+      <QuizTestContent />
+    </Suspense>
   );
 }
