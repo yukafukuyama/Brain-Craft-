@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       question: String(parsed.question ?? "").trim(),
       answer: String(parsed.answer ?? word).trim() || word,
     });
-  } catch (err) {
+  } catch (err: unknown) {
     console.error("Gemini generate error:", err);
     if (err instanceof SyntaxError) {
       return NextResponse.json(
@@ -79,8 +79,29 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+    const errObj = err && typeof err === "object" ? (err as { message?: unknown; status?: unknown }) : {};
+    const msg = String(errObj.message ?? "").toLowerCase();
+    if (msg.includes("401") || msg.includes("api key") || msg.includes("invalid")) {
+      return NextResponse.json(
+        { error: "APIキーが無効です。Google AI Studioでキーを確認してください。" },
+        { status: 500 }
+      );
+    }
+    if (msg.includes("429") || msg.includes("quota") || msg.includes("resource_exhausted")) {
+      return NextResponse.json(
+        { error: "利用制限に達しました。しばらく時間をおいてからお試しください。" },
+        { status: 500 }
+      );
+    }
+    if (msg.includes("403") || msg.includes("permission_denied")) {
+      return NextResponse.json(
+        { error: "APIへのアクセスが拒否されました。Google AI StudioでAPIが有効か確認してください。" },
+        { status: 500 }
+      );
+    }
+    const errMsg = errObj.message ? String(errObj.message) : "";
     return NextResponse.json(
-      { error: "生成に失敗しました。しばらくしてからお試しください。" },
+      { error: errMsg || "生成に失敗しました。しばらくしてからお試しください。" },
       { status: 500 }
     );
   }
