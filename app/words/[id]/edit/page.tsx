@@ -80,7 +80,7 @@ export default function EditWordPage() {
     try {
       const res = await fetch(`/api/words/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json; charset=utf-8" },
         body: JSON.stringify(payload),
       });
       const data = await res.json();

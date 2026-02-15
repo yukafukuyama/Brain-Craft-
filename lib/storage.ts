@@ -47,7 +47,7 @@ export async function storageSet(key: string, value: unknown): Promise<void> {
   await mkdir(DATA_DIR, { recursive: true });
   const safeKey = key.replace(/:/g, "_");
   const path = join(DATA_DIR, `${safeKey}.json`);
-  await writeFile(path, JSON.stringify(value, null, 2));
+  await writeFile(path, JSON.stringify(value, null, 2), { encoding: "utf-8" });
 }
 
 export async function storageKeys(prefix: string): Promise<string[]> {

@@ -12,7 +12,7 @@ export type NotificationSettings = {
   idiomNotificationsEnabled?: boolean;
 };
 
-export type Locale = "ja" | "en";
+export type Locale = "ja" | "en" | "zh";
 
 type UserSettings = {
   notification: NotificationSettings;
@@ -93,7 +93,9 @@ export async function markNotificationSent(lineId: string, dateStr: string, time
 
 export async function getLanguage(lineId: string): Promise<Locale> {
   const data = await getSettings(lineId);
-  return data.language === "en" ? "en" : "ja";
+  if (data.language === "en") return "en";
+  if (data.language === "zh") return "zh";
+  return "ja";
 }
 
 export async function setLanguage(lineId: string, language: Locale): Promise<void> {

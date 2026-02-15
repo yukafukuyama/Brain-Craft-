@@ -42,6 +42,7 @@ export default function SettingsPage() {
             >
               <option value="ja">日本語</option>
               <option value="en">English</option>
+              <option value="zh">中文</option>
             </select>
           </div>
         </section>
@@ -57,7 +58,7 @@ export default function SettingsPage() {
               <span className="text-blue-600 text-sm">→</span>
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              {locale === "ja" ? "時刻設定・LINEお知らせ登録" : "Set time & LINE notifications"}
+              {locale === "ja" ? "時刻設定・LINEお知らせ登録" : locale === "zh" ? "设置时间 & LINE 通知" : "Set time & LINE notifications"}
             </p>
           </Link>
         </section>

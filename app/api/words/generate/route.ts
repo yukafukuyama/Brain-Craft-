@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { jsonUtf8 } from "@/lib/api-response";
 import { cookies } from "next/headers";
 import { GoogleGenAI } from "@google/genai";
 import { getLanguage } from "@/lib/settings-store";
 import type { Locale } from "@/lib/settings-store";
+
+/** Remove HTML tags from text. Use 【】 for emphasis instead. */
+function stripHtml(text: string): string {
+  return text.replace(/<[^>]*>/g, "").trim();
+}
 
 const IDIOM_EXAMPLE = `例：「get back to」の場合は
 {
@@ -17,16 +23,20 @@ const IDIOM_EXAMPLE = `例：「get back to」の場合は
 const FURIGANA_INSTRUCTION_EN = `【Japanese translations with furigana (when app language is English)】
 The user learns English while also learning to read Japanese kanji. For all Japanese text you output (meaning, example_jt, quiz_jt, and any idiom fields in Japanese):
 1. Use both hiragana and kanji (do not use only kanji or only kana).
-2. Add furigana to kanji so readings are clear. Prefer the inline format 漢字(かんじ) (e.g. 学習(がくしゅう), 例文(れいぶん)) for compatibility. HTML <ruby>漢字<rt>かんじ</rt></ruby> is also acceptable.
+2. Add furigana to kanji so readings are clear. Use ONLY the inline format 漢字(かんじ) (e.g. 朝(あさ), 学習(がくしゅう)). Never use HTML tags.
 Use the same format consistently throughout.`;
+
+const NO_HTML_INSTRUCTION = `【HTML禁止】Do not use any HTML tags (<b>, <strong>, <ruby>, etc.). Use 【】 for emphasis when needed.`;
+
+const ZH_FORMAT_INSTRUCTION = `【zh専用・出力形式】例文(example)・クイズ(quiz)とも、必ず「(中文)」と「(日本語訳)」の2行形式で出力すること。冒頭に重複するテキストを置かないこと。各内容は1回のみ記載。`;
 
 const BEGINNER_MODE_EN = `【初心者モード】
 ・語彙制限：専門用語や難解な漢字を使わず、小学校低学年が理解できる言葉で説明してください。
 ・具体例の重視：辞書的な定義（例：〜科の植物）ではなく、見た目・味・使い方（例：赤い、甘い、食べる）を優先してください。
 ・ふりがなの徹底：全ての漢字に 漢字(かんじ) 形式でふりがなを付けてください。`;
 
-const BEGINNER_MODE_EN_SUPPLEMENT = `【Beginner mode — English supplement】
-When app language is English: After the Japanese explanation, add one line in Plain English (simple, easy words) to summarize or clarify.`;
+const BEGINNER_MODE_EN_SUPPLEMENT = `【Beginner mode — supplement】
+When English: Plain English first, then 日本語 below. When Chinese (zh): 简体中文 first, then 日本語 below. Never put 日本語 at the beginning.`;
 
 const JAPANESE_IDIOM_DETECTION_EN = `【When input is in Japanese: detect 単語 vs 慣用句】
 If the input appears to be Japanese, first determine whether it is:
@@ -37,12 +47,15 @@ Detection criteria:
 1. Morphological: If multiple words/phrases combine to have a figurative meaning different from their literal meaning → treat as idiom (e.g. 猫をかぶる, 手が届く).
 2. Dictionary: Prioritize expressions commonly found in idiom dictionaries (e.g. 猫をかぶる, 手が届く, 頭に来る).
 
-【For Japanese idiom in English mode】
-When the input is a Japanese idiom and the user's language is English: explain the idiom's meaning in English first, then add the Japanese explanation with furigana (漢字(かんじ)). Format: "English: [meaning]. 日本語: [explanation with 漢字(かんじ) furigana]."`;
+【For Japanese idiom】
+When en: English first, then 日本語 with furigana below. When zh: 简体中文 first, then 日本語 with furigana below. Never put 日本語 at the beginning.`;
 
 function getLanguageInstruction(locale: Locale): string {
-  if (locale === "en") {
-    return `The user's language setting is English. Output word/idiom meanings and example/quiz translations in **Japanese** (so they can learn English vocabulary while also learning to read Japanese). All such Japanese text must include both hiragana and kanji, with furigana on kanji using the format 漢字(かんじ) or <ruby>漢字<rt>かんじ</rt></ruby>. Use example_jt and quiz_jt for the Japanese translation of the example and quiz sentences in this furigana format.
+  if (locale === "en" || locale === "zh") {
+    return `The user's language setting is ${locale === "zh" ? "Chinese (中文)" : "English"}. For zh: Output 简体中文 FIRST, then 日本語 with furigana BELOW. Never put 日本語 at the beginning. All Japanese must use 漢字(かんじ) furigana format. Use example_jt and quiz_jt for Japanese; for zh also use example_zh and quiz_zh (简体中文, required).
+
+${NO_HTML_INSTRUCTION}
+${locale === "zh" ? ZH_FORMAT_INSTRUCTION : ""}
 
 ${BEGINNER_MODE_EN}
 
@@ -52,20 +65,21 @@ ${FURIGANA_INSTRUCTION_EN}
 
 ${JAPANESE_IDIOM_DETECTION_EN}`;
   }
-  return "ユーザーの言語設定は『日本語』です。単語・イディオムの解説、意味、例文の訳はすべて日本語で出力してください。ふりがなは不要です。";
+  return "ユーザーの言語設定は『日本語』です。単語・イディオムの解説、意味、例文の訳はすべて日本語で出力してください。ふりがなは不要です。HTMLタグは一切使用しないでください。強調は【】を使用してください。";
 }
 
 function buildIdiomPrompt(generateQuiz: boolean, generateAnswer: boolean, locale: Locale): string {
   const langPrefix = getLanguageInstruction(locale);
-  const isEn = locale === "en";
-  const jsonFields = isEn
+  const isEnOrZh = locale === "en" || locale === "zh";
+  const jsonFields = isEnOrZh
     ? [
-        '"meaning": "イディオムの意味（日本語・漢字にふりがな）。最後に Plain English: [1行] で補足"',
+        '"meaning": "When zh: 简体中文 first, then 日本語(漢字にふりがな) below. When en: Plain English first, then 日本語 below. Do not put 日本語 at the beginning."',
         '"breakdown": "構成要素の分解。各単語の意味を 漢字(かんじ) 形式で。例：get（得る）＋ back（戻る）＋ to（〜へ）"',
         '"reaction": "化学反応の解説（日本語）。漢字には 漢字(かんじ) でふりがな"',
         '"usage": "使い分けの解説（日本語）。漢字には 漢字(かんじ) でふりがな"',
         '"example": "例文（英語など対象言語）"',
         '"example_jt": "例文の日本語訳。ひらがなと漢字を併記し、漢字には 漢字(かんじ) でふりがな"',
+        ...(locale === "zh" ? ['"example_zh": "例文の中国語訳（简体中文、必须）"'] : []),
       ]
     : [
         '"meaning": "イディオムの意味（日本語、簡潔に）"',
@@ -76,15 +90,16 @@ function buildIdiomPrompt(generateQuiz: boolean, generateAnswer: boolean, locale
         '"example_jt": "例文の日本語訳"',
       ];
   if (generateQuiz) {
-    jsonFields.push(isEn ? '"quiz": "穴埋め問題（対象言語。空欄は ___ で示す）"' : '"quiz": "穴埋め問題（対象言語。空欄は ___ で示す）"');
-    jsonFields.push(isEn ? '"quiz_jt": "穴埋めの日本語訳（___は使わず完全な文）。漢字には 漢字(かんじ) でふりがな"' : '"quiz_jt": "穴埋めの日本語訳（___は使わず、空欄を埋めた完全な文、ふりがな不要）"');
+    jsonFields.push(isEnOrZh ? '"quiz": "穴埋め問題（対象言語。空欄は ___ で示す）"' : '"quiz": "穴埋め問題（対象言語。空欄は ___ で示す）"');
+    jsonFields.push(isEnOrZh ? '"quiz_jt": "穴埋めの日本語訳（___は使わず完全な文）。全漢字に 漢字(かんじ) でふりがな。初心者向けシンプルな文。HTMLタグ禁止。"' : '"quiz_jt": "穴埋めの日本語訳（___は使わず、空欄を埋めた完全な文、ふりがな不要）"');
+    if (locale === "zh") jsonFields.push('"quiz_zh": "穴埋めの中国語訳（简体中文、必须。___は使わず完全な文）"');
   }
   if (generateAnswer) {
     jsonFields.push('"answer": "穴埋めの答え（入力されたイディオムそのもの）"');
   }
 
-  const furiganaNote = isEn
-    ? "\n【ふりがな】\n全ての日本語（meaning, breakdown, reaction, usage, example_jt, quiz_jt）にはひらがなと漢字の両方を使い、漢字には 漢字(かんじ) の形式でふりがなを付けてください。HTMLの <ruby>漢字<rt>かんじ</rt></ruby> でも可。\n\n"
+  const furiganaNote = isEnOrZh
+    ? `\n【ふりがな】\n全ての日本語（meaning, breakdown, reaction, usage, example_jt, quiz_jt）には漢字(かんじ) 形式でふりがなを付けてください。HTMLタグは使用禁止。${locale === "zh" ? "\n【中国語】example_zh と quiz_zh は必須。出力形式は「(中文)」「(日本語訳)」のみ。重複禁止。" : ""}\n\n【クイズ】穴埋め(___)を維持しつつ、初心者にも分かりやすいシンプルな文にしてください。\n\n`
     : "";
 
   return `${langPrefix}
@@ -115,11 +130,14 @@ ${IDIOM_EXAMPLE}
 function buildSystemPrompt(generateQuiz: boolean, generateAnswer: boolean, locale: Locale): string {
   const langPrefix = getLanguageInstruction(locale);
   const isJa = locale === "ja";
+  const isEnOrZh = locale === "en" || locale === "zh";
   const translationNote = isJa
-    ? "【日本語訳の必須追加】\n例文（example）には、必ずその日本語訳（example_jt）をセットで付けてください。\nquiz_jt（穴埋めの日本語訳）は、___ は使わず、空欄を埋めた状態の完全な文を書いてください。"
-    : "Always include example_jt (translation of the example in the user's language). For quiz_jt, write the full sentence with the blank filled, no ___.";
+    ? "【日本語訳の必須追加】\n例文（example）には、必ずその日本語訳（example_jt）をセットで付けてください。\nquiz_jt（穴埋めの日本語訳）は、___ は使わず、空欄を埋めた状態の完全な文を書いてください。\nHTMLタグは使用禁止。強調は【】を使用。"
+    : locale === "zh"
+    ? "For zh: Output format MUST be (中文) and (日本語訳) only. No duplicate content. example_zh/quiz_zh = Chinese, example_jt/quiz_jt = Japanese with 漢字(かんじ) furigana. No HTML tags. Use 【】 for emphasis."
+    : "Always include example_jt (translation of the example). For quiz_jt, write the full sentence with the blank filled, no ___. Add furigana 漢字(かんじ) to all Japanese. No HTML tags. Use 【】 for emphasis. Keep quiz simple for beginners.";
   const quizSection = generateQuiz
-    ? (isJa ? "穴埋め問題（quiz）を作成する場合も、必ずその日本語訳（quiz_jt）をセットで付けてください。" : "Include quiz_jt (translation of the quiz sentence) when generating quiz.")
+    ? (isJa ? "穴埋め問題（quiz）を作成する場合も、必ずその日本語訳（quiz_jt）をセットで付けてください。" : "Include quiz_jt (translation of the quiz sentence) when generating quiz. Add furigana for en/zh.")
     : "";
 
   const jsonFields = isJa
@@ -131,19 +149,22 @@ function buildSystemPrompt(generateQuiz: boolean, generateAnswer: boolean, local
       ]
     : [
         '"type": "word" or "idiom" — when input is Japanese idiom (慣用句) set "idiom", else "word"',
-        '"meaning": "Japanese explanation with 漢字(かんじ) furigana; then add one line Plain English: [simple summary]"',
+        '"meaning": "When zh: 简体中文 first, then 日本語(漢字にふりがな) below. When en: Plain English first, then Japanese with furigana below. Do not put Japanese at the beginning."',
         '"example": "example sentence (target language, e.g. English)"',
         '"example_jt": "Japanese translation with 漢字(かんじ) furigana"',
+        ...(locale === "zh" ? ['"example_zh": "例文の中国語訳（简体中文、必须）"'] : []),
       ];
   if (generateQuiz) {
     jsonFields.push(isJa ? '"quiz": "穴埋め問題（対象言語。空欄は ___ で示す）"' : '"quiz": "fill-in-blank quiz (use ___ for blank)"');
-    jsonFields.push(isJa ? '"quiz_jt": "穴埋めの日本語訳（___は使わず、空欄を埋めた完全な文、ふりがな不要）"' : '"quiz_jt": "Japanese translation of quiz sentence (full sentence, no ___); use 漢字(かんじ) or <ruby> for furigana"');
+    jsonFields.push(isJa ? '"quiz_jt": "穴埋めの日本語訳（___は使わず、空欄を埋めた完全な文、ふりがな不要）"' : '"quiz_jt": "穴埋めの日本語訳（___は使わず完全な文）。全漢字に 漢字(かんじ) でふりがな。初心者向けシンプルな文。"');
+    if (locale === "zh") jsonFields.push('"quiz_zh": "穴埋め問題の中国語訳（简体中文、必须。___は使わず完全な文）"');
   }
   if (generateAnswer) {
     jsonFields.push('"answer": "穴埋めの答え（入力された単語そのもの）"');
   }
 
   const base = `${langPrefix}
+${isEnOrZh ? `\n${NO_HTML_INSTRUCTION}\n${locale === "zh" ? ZH_FORMAT_INSTRUCTION : ""}\n【クイズ】穴埋め(___)を維持しつつ、初心者にも分かりやすいシンプルな文にしてください。` : ""}
 
 単語学習アプリ用のデータを生成してください。
 
@@ -233,25 +254,35 @@ ${userPrompt}`;
         meaning?: string;
         example?: string;
         example_jt?: string;
+        example_zh?: string;
         breakdown?: string;
         reaction?: string;
         usage?: string;
         quiz?: string;
         quiz_jt?: string;
+        quiz_zh?: string;
         question?: string;
         answer?: string;
       };
 
       const ex = String(parsed.example ?? "").trim();
       const exJt = String(parsed.example_jt ?? "").trim();
+      const exZh = String(parsed.example_zh ?? "").trim();
       const q = generateQuiz ? String(parsed.quiz ?? parsed.question ?? "").trim() : "";
       const qJt = generateQuiz ? String(parsed.quiz_jt ?? "").trim() : "";
+      const qZh = generateQuiz ? String(parsed.quiz_zh ?? "").trim() : "";
       const ans = generateAnswer ? (String(parsed.answer ?? word).trim() || word) : "";
 
       let exampleOut: string;
       if (isIdiom) {
         const parts: string[] = [];
-        if (ex) parts.push(exJt ? `${ex}\n（訳）${exJt}` : ex);
+        if (ex) {
+          if (language === "zh" && exZh) {
+            parts.push(`（中文）${exZh}${exJt ? `\n（日本語訳）${exJt}` : ""}`);
+          } else {
+            parts.push(exJt ? `${ex}\n（訳）${exJt}` : ex);
+          }
+        }
         const breakdown = String(parsed.breakdown ?? "").trim();
         const reaction = String(parsed.reaction ?? "").trim();
         const usage = String(parsed.usage ?? "").trim();
@@ -264,16 +295,27 @@ ${userPrompt}`;
         }
         exampleOut = parts.join("\n\n");
       } else {
-        exampleOut = exJt ? `${ex}\n（訳）${exJt}` : ex;
+        if (language === "zh" && exZh) {
+          exampleOut = `（中文）${exZh}${exJt ? `\n（日本語訳）${exJt}` : ""}`;
+        } else {
+          exampleOut = exJt ? `${ex}\n（訳）${exJt}` : ex;
+        }
       }
 
+      const questionOut =
+        language === "zh" && qZh
+          ? `（中文）${qZh}${qJt ? `\n（日本語訳）${qJt}` : ""}`
+          : qJt
+          ? `${q}\n（訳）${qJt}`
+          : q;
+
       const detectedType = isIdiom ? ("idiom" as const) : (parsed.type === "idiom" ? "idiom" : "word");
-      return NextResponse.json({
+      return jsonUtf8({
         type: detectedType,
-        meaning: String(parsed.meaning ?? "").trim(),
-        example: exampleOut,
-        question: qJt ? `${q}\n（訳）${qJt}` : q,
-        answer: ans,
+        meaning: stripHtml(String(parsed.meaning ?? "").trim()),
+        example: stripHtml(exampleOut),
+        question: stripHtml(questionOut),
+        answer: stripHtml(ans),
       });
     } catch (err: unknown) {
       const errMsg = err && typeof err === "object" && "message" in err ? String((err as { message?: unknown }).message) : "";

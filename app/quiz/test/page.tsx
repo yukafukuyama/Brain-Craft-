@@ -3,6 +3,7 @@
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { SafeHtml } from "@/components/SafeHtml";
 import { saveQuizProgress } from "@/lib/quiz-progress";
 import { WeeklyProgressCard } from "@/components/WeeklyProgressCard";
 import { useLanguage } from "@/components/LanguageProvider";
@@ -144,18 +145,18 @@ function QuizTestContent() {
                     <p
                       key={i}
                       className={
-                        line.startsWith("（訳）")
+                        line.startsWith("（訳）") || line.startsWith("（日本語訳）")
                           ? "text-sm text-gray-500"
                           : "text-lg font-medium text-gray-800"
                       }
                     >
-                      {line}
+                      <SafeHtml html={line} as="span" stripTags />
                     </p>
                   ))}
                 </div>
               ) : (
                 <p className="text-lg font-medium text-gray-800">
-                  {t("quiz.meaningLabel")}: {currentWord.meaning}
+                  {t("quiz.meaningLabel")}: <SafeHtml html={currentWord.meaning} as="span" stripTags />
                 </p>
               )}
 
@@ -163,12 +164,8 @@ function QuizTestContent() {
                 <div className="pt-4 border-t border-gray-100 space-y-2">
                   <p className="text-xl font-bold text-blue-600">{currentWord.word}</p>
                   {currentWord.example && (
-                    <div className="text-sm text-gray-600 space-y-1">
-                      {currentWord.example.split("\n").map((line, i) => (
-                        <p key={i} className={i === 0 ? "italic" : ""}>
-                          {line}
-                        </p>
-                      ))}
+                    <div className="text-sm text-gray-600">
+                      <SafeHtml html={currentWord.example} as="div" stripTags />
                     </div>
                   )}
                 </div>

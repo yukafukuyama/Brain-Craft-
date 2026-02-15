@@ -29,7 +29,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       const res = await fetch("/api/settings/language", { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
-        setLocaleState(data.language === "en" ? "en" : "ja");
+        const l = data.language;
+        setLocaleState(l === "en" ? "en" : l === "zh" ? "zh" : "ja");
       }
     } catch {
       // keep default ja

@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BottomNav } from "@/components/BottomNav";
+import { SafeHtml } from "@/components/SafeHtml";
 import { WordDetailCard } from "@/components/WordDetailCard";
 import { useLanguage } from "@/components/LanguageProvider";
 import type { Word } from "@/lib/words";
@@ -180,9 +181,9 @@ function WordsContent() {
                     </Link>
                   </span>
                 </div>
-                <p className="text-sm text-gray-600 mt-0.5">{item.meaning}</p>
+                <p className="text-sm text-gray-600 mt-0.5"><SafeHtml html={item.meaning} as="span" stripTags /></p>
                 <p className="text-sm text-gray-500 mt-1 italic">
-                  &quot;{item.example}&quot;
+                  &quot;<SafeHtml html={item.example ?? ""} as="span" stripTags />&quot;
                 </p>
               </div>
               <button

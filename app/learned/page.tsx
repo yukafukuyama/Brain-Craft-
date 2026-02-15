@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BottomNav } from "@/components/BottomNav";
+import { SafeHtml } from "@/components/SafeHtml";
 import { useLanguage } from "@/components/LanguageProvider";
 import type { Word } from "@/lib/words";
 
@@ -106,7 +107,7 @@ export default function LearnedPage() {
               >
                 <Link href={`/words/${item.id}/edit`} className="flex-1 min-w-0">
                   <p className="font-bold text-gray-900">{item.word}</p>
-                  <p className="text-sm text-gray-600">{item.meaning}</p>
+                  <p className="text-sm text-gray-600"><SafeHtml html={item.meaning} as="span" stripTags /></p>
                 </Link>
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="text-xs text-gray-400">{item.learnedAtDisplay ?? item.learnedAt}</span>
@@ -146,7 +147,7 @@ export default function LearnedPage() {
               >
                 <Link href={`/words/${item.id}/edit`} className="flex-1 min-w-0">
                   <p className="font-bold text-gray-900">{item.word}</p>
-                  <p className="text-sm text-gray-600">{item.meaning}</p>
+                  <p className="text-sm text-gray-600"><SafeHtml html={item.meaning} as="span" stripTags /></p>
                 </Link>
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="w-8 h-8 rounded-full bg-orange-200 flex items-center justify-center">

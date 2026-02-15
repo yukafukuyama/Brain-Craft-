@@ -53,7 +53,7 @@ export default function HomePage() {
     try {
       const res = await fetch("/api/words/generate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json; charset=utf-8" },
         body: JSON.stringify({
           word: trimmed,
           generateQuiz,
@@ -87,7 +87,7 @@ export default function HomePage() {
     try {
       const res = await fetch("/api/words/register", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json; charset=utf-8" },
         body: JSON.stringify({
           word: word.trim(),
           meaning: meaning.trim(),

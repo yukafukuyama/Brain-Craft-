@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { SafeHtml } from "@/components/SafeHtml";
 import type { Word } from "@/lib/words";
 
 type Props = {
@@ -35,16 +36,14 @@ export function WordDetailCard({ word, onClose }: Props) {
 
           <div>
             <p className="text-xs text-gray-500 mb-1">意味</p>
-            <p className="text-gray-800">{word.meaning}</p>
+            <p className="text-gray-800"><SafeHtml html={word.meaning} as="span" stripTags /></p>
           </div>
 
           {word.example && (
             <div>
               <p className="text-xs text-gray-500 mb-1">例文</p>
-              <div className="text-gray-700 whitespace-pre-wrap text-sm">
-                {word.example.split("\n").map((line, i) => (
-                  <p key={i} className={i > 0 ? "mt-1" : ""}>{line}</p>
-                ))}
+              <div className="text-gray-700 text-sm">
+                <SafeHtml html={word.example} as="div" stripTags />
               </div>
             </div>
           )}
@@ -52,9 +51,11 @@ export function WordDetailCard({ word, onClose }: Props) {
           {word.question && (
             <div>
               <p className="text-xs text-gray-500 mb-1">問題</p>
-              <div className="text-gray-700 whitespace-pre-wrap text-sm">
+              <div className="text-gray-700 text-sm">
                 {word.question.split("\n").map((line, i) => (
-                  <p key={i} className={line.startsWith("（訳）") ? "text-gray-500" : ""}>{line}</p>
+                  <p key={i} className={i > 0 ? "mt-1" : ""}>
+                    <SafeHtml html={line} as="span" stripTags className={line.startsWith("（訳）") || line.startsWith("（日本語訳）") ? "text-gray-500" : ""} />
+                  </p>
                 ))}
               </div>
             </div>
@@ -63,7 +64,7 @@ export function WordDetailCard({ word, onClose }: Props) {
           {word.answer && (
             <div>
               <p className="text-xs text-gray-500 mb-1">答え</p>
-              <p className="text-gray-800 font-medium">{word.answer}</p>
+              <p className="text-gray-800 font-medium"><SafeHtml html={word.answer} as="span" stripTags /></p>
             </div>
           )}
 

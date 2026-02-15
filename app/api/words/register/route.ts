@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { jsonUtf8 } from "@/lib/api-response";
 import { cookies } from "next/headers";
 import { addWord } from "@/lib/words-store";
 import { sendPushMessage } from "@/lib/line-messaging";
@@ -77,5 +78,5 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ success: true, word: newWord });
+  return jsonUtf8({ success: true, word: newWord });
 }

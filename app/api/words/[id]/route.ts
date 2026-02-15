@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { jsonUtf8 } from "@/lib/api-response";
 import { cookies } from "next/headers";
 import { getWords, updateWord, deleteWord, getIdiomsContainingWord, getWordByExactText } from "@/lib/words-store";
 
@@ -29,7 +30,7 @@ export async function GET(
   const linkedWords = (word.type ?? "word") === "idiom" && word.containedWords?.length
     ? (await Promise.all(word.containedWords.map((t) => getWordByExactText(session.lineId, t)))).filter((w): w is NonNullable<typeof w> => w != null)
     : [];
-  return NextResponse.json({
+  return jsonUtf8({
     ...word,
     idiomsContaining: idiomsContaining.map(({ id, word: w }) => ({ id, word: w })),
     linkedWords: linkedWords.map(({ id, word: w }) => ({ id, word: w })),
@@ -84,7 +85,7 @@ export async function PATCH(
   if (!ok) {
     return NextResponse.json({ error: "単語が見つかりません" }, { status: 404 });
   }
-  return NextResponse.json({ success: true });
+  return jsonUtf8({ success: true });
 }
 
 export async function DELETE(
@@ -108,5 +109,5 @@ export async function DELETE(
   if (!ok) {
     return NextResponse.json({ error: "単語が見つかりません" }, { status: 404 });
   }
-  return NextResponse.json({ success: true });
+  return jsonUtf8({ success: true });
 }

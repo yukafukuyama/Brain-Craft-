@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "セッションが無効です" }, { status: 401 });
   }
   const body = await request.json();
-  const lang = body.language === "en" ? "en" : "ja";
+  const lang = body.language === "en" ? "en" : body.language === "zh" ? "zh" : "ja";
   await setLanguage(session.lineId, lang as Locale);
   return NextResponse.json({ language: lang });
 }

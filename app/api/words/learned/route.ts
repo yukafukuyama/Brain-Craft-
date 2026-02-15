@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { jsonUtf8 } from "@/lib/api-response";
 import { cookies } from "next/headers";
 import { getLearnedWords } from "@/lib/words-store";
 
@@ -49,7 +50,7 @@ export async function GET() {
   };
   const thisWeekCount = words.filter((w) => w.learnedAt && isThisWeek(w.learnedAt)).length;
 
-  return NextResponse.json({
+  return jsonUtf8({
     words: withFormatted,
     stats: { thisWeekCount, totalCount: words.length },
   });
