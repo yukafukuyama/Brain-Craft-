@@ -2,15 +2,20 @@
 
 import { useState, useEffect } from "react";
 
-export function CopyableUrl() {
+type CopyableUrlProps = {
+  /** true = フルURL, false = originのみ（デフォルト） */
+  fullUrl?: boolean;
+};
+
+export function CopyableUrl({ fullUrl = false }: CopyableUrlProps = {}) {
   const [url, setUrl] = useState("http://localhost:3000");
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setUrl(window.location.origin);
+      setUrl(fullUrl ? window.location.href : window.location.origin);
     }
-  }, []);
+  }, [fullUrl]);
 
   const handleCopy = async () => {
     try {

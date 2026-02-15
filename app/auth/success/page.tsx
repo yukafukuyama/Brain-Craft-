@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { CopyableUrl } from "@/components/CopyableUrl";
 
 export default function AuthSuccessPage() {
   const router = useRouter();
@@ -18,11 +19,15 @@ export default function AuthSuccessPage() {
 
       <main className="flex-1 flex flex-col items-center px-6 py-4 max-w-lg mx-auto w-full">
         <h2 className="text-base text-gray-900 text-center mb-1">~ 最初のステップ ~</h2>
-        <p className="text-xl font-bold text-gray-900 text-center mb-8">
+        <p className="text-xl font-bold text-gray-900 text-center mb-4">
           ブラウザで開いて
           <br />
           ホームに追加しよう!
         </p>
+        <div className="mb-8 flex flex-col items-center gap-2">
+          <span className="text-sm text-gray-500">このページのURLをコピー</span>
+          <CopyableUrl />
+        </div>
 
         {/* Step 1 */}
         <div className="w-full p-4 bg-gray-100 rounded-xl flex items-center justify-between mb-6">

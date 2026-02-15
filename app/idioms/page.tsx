@@ -142,7 +142,7 @@ export default function IdiomsPage() {
                           <Link
                             key={w}
                             href={`/words?q=${encodeURIComponent(w)}`}
-                            className="text-xs px-2 py-0.5 bg-amber-300 text-gray-900 rounded hover:bg-amber-400"
+                            className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800 rounded hover:bg-amber-200"
                           >
                             {w}
                           </Link>
