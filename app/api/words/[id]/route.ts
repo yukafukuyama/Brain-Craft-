@@ -48,12 +48,20 @@ export async function PATCH(
   const word = String(body.word ?? "").trim();
   const meaning = String(body.meaning ?? "").trim();
   const example = String(body.example ?? "").trim();
+  const question = String(body.question ?? "").trim();
+  const answer = String(body.answer ?? "").trim();
 
   if (!word) {
     return NextResponse.json({ error: "単語を入力してください" }, { status: 400 });
   }
 
-  const ok = await updateWord(session.lineId, wordId, { word, meaning, example });
+  const ok = await updateWord(session.lineId, wordId, {
+    word,
+    meaning,
+    example,
+    question: question || undefined,
+    answer: answer || undefined,
+  });
   if (!ok) {
     return NextResponse.json({ error: "単語が見つかりません" }, { status: 404 });
   }

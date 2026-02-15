@@ -12,6 +12,8 @@ export default function EditWordPage() {
   const [word, setWord] = useState("");
   const [meaning, setMeaning] = useState("");
   const [example, setExample] = useState("");
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -32,6 +34,8 @@ export default function EditWordPage() {
           setWord(data.word ?? "");
           setMeaning(data.meaning ?? "");
           setExample(data.example ?? "");
+          setQuestion(data.question ?? "");
+          setAnswer(data.answer ?? "");
         } else {
           setError("単語が見つかりません");
         }
@@ -47,7 +51,13 @@ export default function EditWordPage() {
       const res = await fetch(`/api/words/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ word: word.trim(), meaning: meaning.trim(), example: example.trim() }),
+        body: JSON.stringify({
+          word: word.trim(),
+          meaning: meaning.trim(),
+          example: example.trim(),
+          question: question.trim(),
+          answer: answer.trim(),
+        }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -153,6 +163,26 @@ export default function EditWordPage() {
               onChange={(e) => setExample(e.target.value)}
               rows={3}
               className="w-full px-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-blue-500 resize-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">問題</label>
+            <input
+              type="text"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="例: 回復力、弾力性を表す英単語は？"
+              className="w-full px-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">答え</label>
+            <input
+              type="text"
+              value={answer}
+              onChange={(e) => setAnswer(e.target.value)}
+              placeholder="例: Resilience"
+              className="w-full px-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-blue-500"
             />
           </div>
 

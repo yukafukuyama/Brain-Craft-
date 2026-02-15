@@ -30,6 +30,8 @@ export async function POST() {
     const parts = [`【${w.word}】`];
     if (w.meaning) parts.push(`意味: ${w.meaning}`);
     if (w.example) parts.push(`例文: ${w.example}`);
+    if (w.question) parts.push(`問題: ${w.question}`);
+    if (w.answer) parts.push(`答え: ${w.answer}`);
     return parts.join("\n");
   });
   const text = blocks.join("\n\n");

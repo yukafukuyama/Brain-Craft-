@@ -31,7 +31,7 @@ export async function getWords(lineId: string): Promise<Word[]> {
 export async function updateWord(
   lineId: string,
   wordId: string,
-  updates: Partial<Pick<Word, "word" | "meaning" | "example">>
+  updates: Partial<Pick<Word, "word" | "meaning" | "example" | "question" | "answer">>
 ): Promise<boolean> {
   const data = await loadWords();
   const list = data[lineId] ?? [];
@@ -40,6 +40,8 @@ export async function updateWord(
   if (updates.word !== undefined) word.word = updates.word;
   if (updates.meaning !== undefined) word.meaning = updates.meaning;
   if (updates.example !== undefined) word.example = updates.example;
+  if (updates.question !== undefined) word.question = updates.question;
+  if (updates.answer !== undefined) word.answer = updates.answer;
   await saveWords(data);
   return true;
 }

@@ -3,6 +3,8 @@ export type Word = {
   word: string;
   meaning: string;
   example: string;
+  question?: string;
+  answer?: string;
   learnedAt?: string; // "今日" | "昨日" | "2024-10-24" etc.
 };
 

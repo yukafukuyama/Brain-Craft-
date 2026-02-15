@@ -21,6 +21,8 @@ export default function HomePage() {
   const [word, setWord] = useState("");
   const [meaning, setMeaning] = useState("");
   const [example, setExample] = useState("");
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -35,7 +37,13 @@ export default function HomePage() {
       const res = await fetch("/api/words/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ word: word.trim(), meaning: meaning.trim(), example: example.trim() }),
+        body: JSON.stringify({
+          word: word.trim(),
+          meaning: meaning.trim(),
+          example: example.trim(),
+          question: question.trim(),
+          answer: answer.trim(),
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -45,6 +53,8 @@ export default function HomePage() {
       setWord("");
       setMeaning("");
       setExample("");
+      setQuestion("");
+      setAnswer("");
       router.push("/words");
     } catch {
       setError("通信エラーが発生しました");
@@ -94,6 +104,26 @@ export default function HomePage() {
               onChange={(e) => setExample(e.target.value)}
               rows={3}
               className="w-full px-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-blue-500 resize-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">問題</label>
+            <input
+              type="text"
+              placeholder="例: 回復力、弾力性を表す英単語は？"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              className="w-full px-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">答え</label>
+            <input
+              type="text"
+              placeholder="例: Resilience"
+              value={answer}
+              onChange={(e) => setAnswer(e.target.value)}
+              className="w-full px-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
