@@ -31,6 +31,11 @@ export function shouldHideTranslation(locale: Locale, contentLang?: ContentLang)
   return locale === contentLang;
 }
 
+/** zh選択＋ja単語のとき（日本語訳）を非表示（二重表示防止） */
+export function shouldHideJtForZhJa(locale: Locale, contentLang?: ContentLang): boolean {
+  return locale === "zh" && contentLang === "ja";
+}
+
 /**
  * 例文・問題文から、locale と contentLang が一致する場合に訳の行を除去
  * - （訳）: en コンテンツの日本語訳
@@ -42,18 +47,22 @@ export function filterTranslationLines(
   locale: Locale,
   contentLang?: ContentLang
 ): string {
-  if (!shouldHideTranslation(locale, contentLang)) return text;
   const lines = text.split("\n");
   const filtered = lines.filter((line) => {
     const t = line.trim();
-    if (locale === "ja" && contentLang === "ja") {
-      return !t.startsWith("（訳）") && !t.startsWith("（日本語訳）");
+    if (shouldHideTranslation(locale, contentLang)) {
+      if (locale === "ja" && contentLang === "ja") {
+        return !t.startsWith("（訳）") && !t.startsWith("（日本語訳）");
+      }
+      if (locale === "zh" && contentLang === "zh") {
+        return !t.startsWith("（日本語訳）");
+      }
+      if (locale === "en" && contentLang === "en") {
+        return !t.startsWith("（訳）") && !t.startsWith("（日本語訳）");
+      }
     }
-    if (locale === "zh" && contentLang === "zh") {
-      return !t.startsWith("（日本語訳）");
-    }
-    if (locale === "en" && contentLang === "en") {
-      return !t.startsWith("（訳）") && !t.startsWith("（日本語訳）");
+    if (shouldHideJtForZhJa(locale, contentLang)) {
+      return !t.startsWith("（日本語訳）"); // zh選択＋ja単語時は（日本語訳）を非表示（二重防止）
     }
     return true;
   });

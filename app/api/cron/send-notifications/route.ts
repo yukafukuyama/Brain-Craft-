@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
     const notificationSettings = await getNotificationSettings(lineId);
     const idiomEnabled = notificationSettings.idiomNotificationsEnabled !== false;
     const words = allWords.filter((w) => {
+      if (w.learnedAt) return false; // 習得済み・削除済みは通知対象外
       const listName = w.listName?.trim() || "未分類";
       if (!(notifSettings[listName] ?? true)) return false;
       if ((w.type ?? "word") === "idiom" && !idiomEnabled) return false;

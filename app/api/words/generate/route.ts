@@ -72,6 +72,9 @@ ${JAPANESE_IDIOM_DETECTION_EN}`;
 /** 日本語単語の場合、例文・問題に訳を出力しない（トークン節約） */
 const JA_SKIP_TRANSLATION_NOTE = "\n\n【日本語単語の場合】例文(example)・問題(quiz)は日本語のみで出力し、example_jt および quiz_jt は出力不要です。";
 
+/** 英語選択＋日本語単語の場合、（訳）は英語で出力 */
+const EN_JA_TRANSLATION_NOTE = "\n\n【英語選択・日本語単語の場合】example_jt および quiz_jt は英語で出力してください（日本語ではなく）。例文・問題は日本語、訳は英語。";
+
 function buildIdiomPrompt(
   generateQuiz: boolean,
   generateAnswer: boolean,
@@ -79,7 +82,11 @@ function buildIdiomPrompt(
   contentLang: ContentLang
 ): string {
   const skipTranslation = locale === "ja" && contentLang === "ja";
-  const langPrefix = getLanguageInstruction(locale) + (skipTranslation ? JA_SKIP_TRANSLATION_NOTE : "");
+  const skipJtForZhJa = locale === "zh" && contentLang === "ja"; // zh選択＋日本語単語時は（日本語訳）重複防止
+  const enWithJaContent = locale === "en" && contentLang === "ja"; // 英語選択＋日本語単語時は（訳）を英語で
+  const langPrefix = getLanguageInstruction(locale)
+    + (skipTranslation ? JA_SKIP_TRANSLATION_NOTE : "")
+    + (enWithJaContent ? EN_JA_TRANSLATION_NOTE : "");
   const isEnOrZh = locale === "en" || locale === "zh";
   const jsonFields = isEnOrZh
     ? [
@@ -87,8 +94,8 @@ function buildIdiomPrompt(
         '"breakdown": "構成要素の分解。各単語の意味を 漢字(かんじ) 形式で。例：get（得る）＋ back（戻る）＋ to（〜へ）"',
         '"reaction": "化学反応の解説（日本語）。漢字には 漢字(かんじ) でふりがな"',
         '"usage": "使い分けの解説（日本語）。漢字には 漢字(かんじ) でふりがな"',
-        '"example": "例文（英語など対象言語）"',
-        '"example_jt": "例文の日本語訳。ひらがなと漢字を併記し、漢字には 漢字(かんじ) でふりがな"',
+        '"example": "例文（英語など対象言語。日本語単語の場合は日本語）"',
+        ...(!skipJtForZhJa ? ['"example_jt": "' + (enWithJaContent ? '例文の英語訳（English translation。日本語単語の場合は英語で）' : '例文の日本語訳。ひらがなと漢字を併記し、漢字には 漢字(かんじ) でふりがな') + '"'] : []),
         ...(locale === "zh" ? ['"example_zh": "例文の中国語訳（简体中文、必须）"'] : []),
       ]
     : [
@@ -101,8 +108,13 @@ function buildIdiomPrompt(
       ];
   if (generateQuiz) {
     jsonFields.push(isEnOrZh ? '"quiz": "穴埋め問題（対象言語。空欄は ___ で示す）"' : '"quiz": "穴埋め問題（対象言語。空欄は ___ で示す）"');
-    if (!skipTranslation) {
-      jsonFields.push(isEnOrZh ? '"quiz_jt": "穴埋めの日本語訳（___は使わず完全な文）。全漢字に 漢字(かんじ) でふりがな。初心者向けシンプルな文。HTMLタグ禁止。"' : '"quiz_jt": "穴埋めの日本語訳（___は使わず、空欄を埋めた完全な文、ふりがな不要）"');
+    if (!skipTranslation && !skipJtForZhJa) {
+      const quizJtDesc = enWithJaContent
+        ? "穴埋めの英語訳（___は使わず完全な文。日本語単語の場合は英語で）"
+        : isEnOrZh
+        ? "穴埋めの日本語訳（___は使わず完全な文）。全漢字に 漢字(かんじ) でふりがな。初心者向けシンプルな文。HTMLタグ禁止。"
+        : "穴埋めの日本語訳（___は使わず、空欄を埋めた完全な文、ふりがな不要）";
+      jsonFields.push(`"quiz_jt": "${quizJtDesc}"`);
     }
     if (locale === "zh") jsonFields.push('"quiz_zh": "穴埋めの中国語訳（简体中文、必须。___は使わず完全な文）"');
   }
@@ -111,7 +123,7 @@ function buildIdiomPrompt(
   }
 
   const furiganaNote = isEnOrZh
-    ? `\n【ふりがな】\n全ての日本語（meaning, breakdown, reaction, usage, example_jt, quiz_jt）には漢字(かんじ) 形式でふりがなを付けてください。HTMLタグは使用禁止。${locale === "zh" ? "\n【中国語】example_zh と quiz_zh は必須。出力形式は「(中文)」「(日本語訳)」のみ。重複禁止。" : ""}\n\n【クイズ】穴埋め(___)を維持しつつ、初心者にも分かりやすいシンプルな文にしてください。\n\n`
+    ? `\n【ふりがな】\n全ての日本語（meaning, breakdown, reaction, usage, example_jt, quiz_jt）には漢字(かんじ) 形式でふりがなを付けてください。HTMLタグは使用禁止。${locale === "zh" ? (skipJtForZhJa ? "\n【中国語】example_zh と quiz_zh のみ。日本語単語のため example_jt/quiz_jt は不要。出力形式は「(中文)」のみ。" : "\n【中国語】example_zh と quiz_zh は必須。出力形式は「(中文)」「(日本語訳)」のみ。重複禁止。") : ""}\n\n【クイズ】穴埋め(___)を維持しつつ、初心者にも分かりやすいシンプルな文にしてください。\n\n`
     : "";
 
   return `${langPrefix}
@@ -146,18 +158,26 @@ function buildSystemPrompt(
   contentLang: ContentLang
 ): string {
   const skipTranslation = locale === "ja" && contentLang === "ja";
-  const langPrefix = getLanguageInstruction(locale) + (skipTranslation ? JA_SKIP_TRANSLATION_NOTE : "");
+  const skipJtForZhJa = locale === "zh" && contentLang === "ja"; // zh選択＋日本語単語時は（日本語訳）重複防止
+  const enWithJaContent = locale === "en" && contentLang === "ja"; // 英語選択＋日本語単語時は（訳）を英語で
+  const langPrefix = getLanguageInstruction(locale)
+    + (skipTranslation ? JA_SKIP_TRANSLATION_NOTE : "")
+    + (enWithJaContent ? EN_JA_TRANSLATION_NOTE : "");
   const isJa = locale === "ja";
   const isEnOrZh = locale === "en" || locale === "zh";
   const translationNote = skipTranslation
     ? ""
+    : skipJtForZhJa
+    ? "【日本語単語の場合】example_zh/quiz_zh のみ出力。example_jt/quiz_jt は不要（日本語が重複するため）。"
     : isJa
     ? "【日本語訳の必須追加】\n例文（example）には、必ずその日本語訳（example_jt）をセットで付けてください。\nquiz_jt（穴埋めの日本語訳）は、___ は使わず、空欄を埋めた状態の完全な文を書いてください。\nHTMLタグは使用禁止。強調は【】を使用。"
     : locale === "zh"
     ? "For zh: Output format MUST be (中文) and (日本語訳) only. No duplicate content. example_zh/quiz_zh = Chinese, example_jt/quiz_jt = Japanese with 漢字(かんじ) furigana. No HTML tags. Use 【】 for emphasis."
+    : enWithJaContent
+    ? "When input is Japanese: example/quiz in Japanese, example_jt/quiz_jt = English translation (not Japanese). Output (訳) in English."
     : "Always include example_jt (translation of the example). For quiz_jt, write the full sentence with the blank filled, no ___. Add furigana 漢字(かんじ) to all Japanese. No HTML tags. Use 【】 for emphasis. Keep quiz simple for beginners.";
-  const quizSection = generateQuiz && !skipTranslation
-    ? (isJa ? "穴埋め問題（quiz）を作成する場合も、必ずその日本語訳（quiz_jt）をセットで付けてください。" : "Include quiz_jt (translation of the quiz sentence) when generating quiz. Add furigana for en/zh.")
+  const quizSection = generateQuiz && !skipTranslation && !skipJtForZhJa
+    ? (isJa ? "穴埋め問題（quiz）を作成する場合も、必ずその日本語訳（quiz_jt）をセットで付けてください。" : enWithJaContent ? "Include quiz_jt = English translation of the quiz (when input is Japanese)." : "Include quiz_jt (translation of the quiz sentence) when generating quiz. Add furigana for en/zh.")
     : "";
 
   const jsonFields = isJa
@@ -170,14 +190,17 @@ function buildSystemPrompt(
     : [
         '"type": "word" or "idiom" — when input is Japanese idiom (慣用句) set "idiom", else "word"',
         '"meaning": "When zh: 简体中文 first, then 日本語(漢字にふりがな) below. When en: Plain English first, then Japanese with furigana below. Do not put Japanese at the beginning."',
-        '"example": "example sentence (target language, e.g. English)"',
-        '"example_jt": "Japanese translation with 漢字(かんじ) furigana"',
+        '"example": "example sentence (target language; when input is Japanese, use Japanese)"',
+        ...(!skipJtForZhJa ? ['"example_jt": "' + (enWithJaContent ? 'English translation (when input is Japanese, output in English)' : 'Japanese translation with 漢字(かんじ) furigana') + '"'] : []),
         ...(locale === "zh" ? ['"example_zh": "例文の中国語訳（简体中文、必须）"'] : []),
       ];
   if (generateQuiz) {
     jsonFields.push(isJa ? '"quiz": "穴埋め問題（対象言語。空欄は ___ で示す）"' : '"quiz": "fill-in-blank quiz (use ___ for blank)"');
-    if (!skipTranslation) {
-      jsonFields.push(isJa ? '"quiz_jt": "穴埋めの日本語訳（___は使わず、空欄を埋めた完全な文、ふりがな不要）"' : '"quiz_jt": "穴埋めの日本語訳（___は使わず完全な文）。全漢字に 漢字(かんじ) でふりがな。初心者向けシンプルな文。"');
+    if (!skipTranslation && !skipJtForZhJa) {
+      const sysQuizJt = enWithJaContent
+        ? "穴埋めの英語訳（日本語単語の場合は英語で。___は使わず完全な文）"
+        : isJa ? "穴埋めの日本語訳（___は使わず、空欄を埋めた完全な文、ふりがな不要）" : "穴埋めの日本語訳（___は使わず完全な文）。全漢字に 漢字(かんじ) でふりがな。初心者向けシンプルな文。";
+      jsonFields.push(`"quiz_jt": "${sysQuizJt}"`);
     }
     if (locale === "zh") jsonFields.push('"quiz_zh": "穴埋め問題の中国語訳（简体中文、必须。___は使わず完全な文）"');
   }
@@ -296,13 +319,14 @@ ${userPrompt}`;
       const qZh = generateQuiz ? String(parsed.quiz_zh ?? "").trim() : "";
       const ans = generateAnswer ? (String(parsed.answer ?? word).trim() || word) : "";
       const skipTrans = language === "ja" && contentLang === "ja";
+      const skipJtForZh = language === "zh" && contentLang === "ja"; // 中国語選択＋日本語単語時は（日本語訳）を重複させない
 
       let exampleOut: string;
       if (isIdiom) {
         const parts: string[] = [];
         if (ex) {
           if (language === "zh" && exZh) {
-            parts.push(`（中文）${exZh}${exJt ? `\n（日本語訳）${exJt}` : ""}`);
+            parts.push(`（中文）${exZh}${!skipJtForZh && exJt ? `\n（日本語訳）${exJt}` : ""}`);
           } else if (skipTrans) {
             parts.push(ex);
           } else {
@@ -322,7 +346,7 @@ ${userPrompt}`;
         exampleOut = parts.join("\n\n");
       } else {
         if (language === "zh" && exZh) {
-          exampleOut = `（中文）${exZh}${exJt ? `\n（日本語訳）${exJt}` : ""}`;
+          exampleOut = `（中文）${exZh}${!skipJtForZh && exJt ? `\n（日本語訳）${exJt}` : ""}`;
         } else if (skipTrans) {
           exampleOut = ex;
         } else {
@@ -332,7 +356,7 @@ ${userPrompt}`;
 
       const questionOut =
         language === "zh" && qZh
-          ? `（中文）${qZh}${qJt ? `\n（日本語訳）${qJt}` : ""}`
+          ? `（中文）${qZh}${!skipJtForZh && qJt ? `\n（日本語訳）${qJt}` : ""}`
           : skipTrans
           ? q
           : qJt
