@@ -2,13 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { GoogleGenAI } from "@google/genai";
 
-const SYSTEM_PROMPT = `単語学習アプリ用のデータです。日本語で分かりやすく、覚えやすい例文を作ってください。
-出力は必ず以下のJSON形式のみで返してください。他のテキストやマークダウンは含めないでください。
+const SYSTEM_PROMPT = `単語学習アプリ用のデータを生成してください。
+
+【多言語対応】
+入力された単語の言語を自動で判別し、その言語の学習に最適な例文と問題を作成してください。
+英語、韓国語、中国語、フランス語、スペイン語など、あらゆる言語に対応してください。
+
+【日本語訳の必須追加】
+例文（example）と穴埋め問題（quiz）には、必ずその日本語訳（example_jt, quiz_jt）をセットで付けてください。
+
+【出力フォーマット】
+レスポンスは必ず以下のJSON形式のみで返してください。他のテキストやマークダウンは含めないでください。
 {
-  "meaning": "意味（日本語）",
-  "example": "例文（英単語を含む英文）",
-  "question": "問題（穴埋め形式・日本語で、例：「〇〇を表す英単語は？」）",
-  "answer": "答え（入力された単語そのもの）"
+  "meaning": "単語の意味（日本語）",
+  "example": "例文（対象言語）",
+  "example_jt": "例文の日本語訳",
+  "quiz": "穴埋め問題（対象言語。空欄は ___ で示す）",
+  "quiz_jt": "穴埋め問題の日本語訳",
+  "answer": "穴埋めの答え（入力された単語そのもの）"
 }`;
 
 export async function POST(request: NextRequest) {
@@ -41,7 +52,7 @@ export async function POST(request: NextRequest) {
   const ai = new GoogleGenAI({ apiKey });
   const prompt = `${SYSTEM_PROMPT}
 
-次の英単語の意味、例文、穴埋め形式の問題、その答えを生成してください：${word}`;
+次の単語の意味、例文、穴埋め形式の問題、その答えを生成してください：${word}`;
 
   const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-flash-8b", "gemini-pro"] as const;
 
@@ -62,15 +73,23 @@ export async function POST(request: NextRequest) {
       const parsed = JSON.parse(jsonStr) as {
         meaning?: string;
         example?: string;
-        question?: string;
+        example_jt?: string;
+        quiz?: string;
+        quiz_jt?: string;
         answer?: string;
       };
 
+      const ex = String(parsed.example ?? "").trim();
+      const exJt = String(parsed.example_jt ?? "").trim();
+      const q = String(parsed.quiz ?? parsed.question ?? "").trim();
+      const qJt = String(parsed.quiz_jt ?? "").trim();
+      const ans = String(parsed.answer ?? word).trim() || word;
+
       return NextResponse.json({
         meaning: String(parsed.meaning ?? "").trim(),
-        example: String(parsed.example ?? "").trim(),
-        question: String(parsed.question ?? "").trim(),
-        answer: String(parsed.answer ?? word).trim() || word,
+        example: exJt ? `${ex}\n（訳）${exJt}` : ex,
+        question: qJt ? `${q}\n（訳）${qJt}` : q,
+        answer: ans,
       });
     } catch (err: unknown) {
       const errMsg = err && typeof err === "object" && "message" in err ? String((err as { message?: unknown }).message) : "";
