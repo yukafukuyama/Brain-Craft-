@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { SafeHtml } from "@/components/SafeHtml";
+import { filterTranslationLines } from "@/lib/content-lang";
 import { saveQuizProgress } from "@/lib/quiz-progress";
 import { WeeklyProgressCard } from "@/components/WeeklyProgressCard";
 import { useLanguage } from "@/components/LanguageProvider";
@@ -17,6 +18,7 @@ type QuizWord = {
   example?: string;
   question?: string;
   answer?: string;
+  contentLang?: "ja" | "en" | "zh";
 };
 
 function shuffle<T>(arr: T[]): T[] {
@@ -31,7 +33,7 @@ function shuffle<T>(arr: T[]): T[] {
 function QuizTestContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const listParam = searchParams.get("list") ?? "";
   const typeParam = (searchParams.get("type") ?? "both") as "word" | "idiom" | "both";
   const [status, setStatus] = useState<"loading" | "no-words" | "quiz" | "done">("loading");
@@ -92,6 +94,12 @@ function QuizTestContent() {
   }, [status]);
 
   const currentWord = quizWords[currentIndex];
+  const questionDisplay = currentWord?.question
+    ? filterTranslationLines(currentWord.question, locale, currentWord.contentLang)
+    : "";
+  const exampleDisplay = currentWord?.example
+    ? filterTranslationLines(currentWord.example, locale, currentWord.contentLang)
+    : "";
   const isLastCard = currentIndex === quizWords.length - 1;
   const total = quizWords.length;
 
@@ -139,9 +147,9 @@ function QuizTestContent() {
 
           <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-sm min-h-[200px] max-h-[60vh] flex flex-col">
             <div className="space-y-4 overflow-y-auto flex-1 min-h-0">
-              {currentWord.question ? (
+              {questionDisplay ? (
                 <div className="space-y-2">
-                  {currentWord.question.split("\n").map((line, i) => (
+                  {questionDisplay.split("\n").map((line, i) => (
                     <p
                       key={i}
                       className={
@@ -163,9 +171,9 @@ function QuizTestContent() {
               {revealed && (
                 <div className="pt-4 border-t border-gray-100 space-y-2">
                   <p className="text-xl font-bold text-blue-600">{currentWord.word}</p>
-                  {currentWord.example && (
+                  {exampleDisplay && (
                     <div className="text-sm text-gray-600">
-                      <SafeHtml html={currentWord.example} as="div" stripTags />
+                      <SafeHtml html={exampleDisplay} as="div" stripTags />
                     </div>
                   )}
                 </div>

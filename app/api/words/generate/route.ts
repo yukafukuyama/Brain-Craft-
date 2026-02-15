@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { GoogleGenAI } from "@google/genai";
 import { getLanguage } from "@/lib/settings-store";
 import type { Locale } from "@/lib/settings-store";
+import { detectContentLang, type ContentLang } from "@/lib/content-lang";
 
 /** Remove HTML tags from text. Use 【】 for emphasis instead. */
 function stripHtml(text: string): string {
@@ -68,8 +69,17 @@ ${JAPANESE_IDIOM_DETECTION_EN}`;
   return "ユーザーの言語設定は『日本語』です。単語・イディオムの解説、意味、例文の訳はすべて日本語で出力してください。ふりがなは不要です。HTMLタグは一切使用しないでください。強調は【】を使用してください。";
 }
 
-function buildIdiomPrompt(generateQuiz: boolean, generateAnswer: boolean, locale: Locale): string {
-  const langPrefix = getLanguageInstruction(locale);
+/** 日本語単語の場合、例文・問題に訳を出力しない（トークン節約） */
+const JA_SKIP_TRANSLATION_NOTE = "\n\n【日本語単語の場合】例文(example)・問題(quiz)は日本語のみで出力し、example_jt および quiz_jt は出力不要です。";
+
+function buildIdiomPrompt(
+  generateQuiz: boolean,
+  generateAnswer: boolean,
+  locale: Locale,
+  contentLang: ContentLang
+): string {
+  const skipTranslation = locale === "ja" && contentLang === "ja";
+  const langPrefix = getLanguageInstruction(locale) + (skipTranslation ? JA_SKIP_TRANSLATION_NOTE : "");
   const isEnOrZh = locale === "en" || locale === "zh";
   const jsonFields = isEnOrZh
     ? [
@@ -87,11 +97,13 @@ function buildIdiomPrompt(generateQuiz: boolean, generateAnswer: boolean, locale
         '"reaction": "化学反応：組み合わさることでなぜ今の意味になるかを、イメージで解説"',
         '"usage": "使い分け：ビジネス、日常会話など、どんな場面で使われるのが自然か"',
         '"example": "例文（イディオムのニュアンスが一番伝わるシチュエーション）"',
-        '"example_jt": "例文の日本語訳"',
+        ...(!skipTranslation ? ['"example_jt": "例文の日本語訳"'] : []),
       ];
   if (generateQuiz) {
     jsonFields.push(isEnOrZh ? '"quiz": "穴埋め問題（対象言語。空欄は ___ で示す）"' : '"quiz": "穴埋め問題（対象言語。空欄は ___ で示す）"');
-    jsonFields.push(isEnOrZh ? '"quiz_jt": "穴埋めの日本語訳（___は使わず完全な文）。全漢字に 漢字(かんじ) でふりがな。初心者向けシンプルな文。HTMLタグ禁止。"' : '"quiz_jt": "穴埋めの日本語訳（___は使わず、空欄を埋めた完全な文、ふりがな不要）"');
+    if (!skipTranslation) {
+      jsonFields.push(isEnOrZh ? '"quiz_jt": "穴埋めの日本語訳（___は使わず完全な文）。全漢字に 漢字(かんじ) でふりがな。初心者向けシンプルな文。HTMLタグ禁止。"' : '"quiz_jt": "穴埋めの日本語訳（___は使わず、空欄を埋めた完全な文、ふりがな不要）"');
+    }
     if (locale === "zh") jsonFields.push('"quiz_zh": "穴埋めの中国語訳（简体中文、必须。___は使わず完全な文）"');
   }
   if (generateAnswer) {
@@ -127,16 +139,24 @@ ${IDIOM_EXAMPLE}
 }`;
 }
 
-function buildSystemPrompt(generateQuiz: boolean, generateAnswer: boolean, locale: Locale): string {
-  const langPrefix = getLanguageInstruction(locale);
+function buildSystemPrompt(
+  generateQuiz: boolean,
+  generateAnswer: boolean,
+  locale: Locale,
+  contentLang: ContentLang
+): string {
+  const skipTranslation = locale === "ja" && contentLang === "ja";
+  const langPrefix = getLanguageInstruction(locale) + (skipTranslation ? JA_SKIP_TRANSLATION_NOTE : "");
   const isJa = locale === "ja";
   const isEnOrZh = locale === "en" || locale === "zh";
-  const translationNote = isJa
+  const translationNote = skipTranslation
+    ? ""
+    : isJa
     ? "【日本語訳の必須追加】\n例文（example）には、必ずその日本語訳（example_jt）をセットで付けてください。\nquiz_jt（穴埋めの日本語訳）は、___ は使わず、空欄を埋めた状態の完全な文を書いてください。\nHTMLタグは使用禁止。強調は【】を使用。"
     : locale === "zh"
     ? "For zh: Output format MUST be (中文) and (日本語訳) only. No duplicate content. example_zh/quiz_zh = Chinese, example_jt/quiz_jt = Japanese with 漢字(かんじ) furigana. No HTML tags. Use 【】 for emphasis."
     : "Always include example_jt (translation of the example). For quiz_jt, write the full sentence with the blank filled, no ___. Add furigana 漢字(かんじ) to all Japanese. No HTML tags. Use 【】 for emphasis. Keep quiz simple for beginners.";
-  const quizSection = generateQuiz
+  const quizSection = generateQuiz && !skipTranslation
     ? (isJa ? "穴埋め問題（quiz）を作成する場合も、必ずその日本語訳（quiz_jt）をセットで付けてください。" : "Include quiz_jt (translation of the quiz sentence) when generating quiz. Add furigana for en/zh.")
     : "";
 
@@ -145,7 +165,7 @@ function buildSystemPrompt(generateQuiz: boolean, generateAnswer: boolean, local
         '"type": "word" or "idiom" — 入力が慣用句・ことわざの場合は "idiom"、単語の場合は "word"',
         '"meaning": "単語の意味（日本語、ふりがな不要）"',
         '"example": "例文（対象言語）"',
-        '"example_jt": "例文の日本語訳（ふりがな不要）"',
+        ...(!skipTranslation ? ['"example_jt": "例文の日本語訳（ふりがな不要）"'] : []),
       ]
     : [
         '"type": "word" or "idiom" — when input is Japanese idiom (慣用句) set "idiom", else "word"',
@@ -156,7 +176,9 @@ function buildSystemPrompt(generateQuiz: boolean, generateAnswer: boolean, local
       ];
   if (generateQuiz) {
     jsonFields.push(isJa ? '"quiz": "穴埋め問題（対象言語。空欄は ___ で示す）"' : '"quiz": "fill-in-blank quiz (use ___ for blank)"');
-    jsonFields.push(isJa ? '"quiz_jt": "穴埋めの日本語訳（___は使わず、空欄を埋めた完全な文、ふりがな不要）"' : '"quiz_jt": "穴埋めの日本語訳（___は使わず完全な文）。全漢字に 漢字(かんじ) でふりがな。初心者向けシンプルな文。"');
+    if (!skipTranslation) {
+      jsonFields.push(isJa ? '"quiz_jt": "穴埋めの日本語訳（___は使わず、空欄を埋めた完全な文、ふりがな不要）"' : '"quiz_jt": "穴埋めの日本語訳（___は使わず完全な文）。全漢字に 漢字(かんじ) でふりがな。初心者向けシンプルな文。"');
+    }
     if (locale === "zh") jsonFields.push('"quiz_zh": "穴埋め問題の中国語訳（简体中文、必须。___は使わず完全な文）"');
   }
   if (generateAnswer) {
@@ -220,10 +242,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "単語を入力してください" }, { status: 400 });
   }
 
+  const contentLang = detectContentLang(word, language);
   const isIdiom = word.includes(" ");
   const systemPrompt = isIdiom
-    ? buildIdiomPrompt(generateQuiz, generateAnswer, language)
-    : buildSystemPrompt(generateQuiz, generateAnswer, language);
+    ? buildIdiomPrompt(generateQuiz, generateAnswer, language, contentLang)
+    : buildSystemPrompt(generateQuiz, generateAnswer, language, contentLang);
   const userPrompt = isIdiom
     ? `次のイディオムのデータを生成してください：${word}`
     : `次の単語の意味、例文${generateQuiz ? "、穴埋め形式の問題" : ""}${generateAnswer ? "、その答え" : ""}を生成してください：${word}`;
@@ -272,6 +295,7 @@ ${userPrompt}`;
       const qJt = generateQuiz ? String(parsed.quiz_jt ?? "").trim() : "";
       const qZh = generateQuiz ? String(parsed.quiz_zh ?? "").trim() : "";
       const ans = generateAnswer ? (String(parsed.answer ?? word).trim() || word) : "";
+      const skipTrans = language === "ja" && contentLang === "ja";
 
       let exampleOut: string;
       if (isIdiom) {
@@ -279,6 +303,8 @@ ${userPrompt}`;
         if (ex) {
           if (language === "zh" && exZh) {
             parts.push(`（中文）${exZh}${exJt ? `\n（日本語訳）${exJt}` : ""}`);
+          } else if (skipTrans) {
+            parts.push(ex);
           } else {
             parts.push(exJt ? `${ex}\n（訳）${exJt}` : ex);
           }
@@ -297,6 +323,8 @@ ${userPrompt}`;
       } else {
         if (language === "zh" && exZh) {
           exampleOut = `（中文）${exZh}${exJt ? `\n（日本語訳）${exJt}` : ""}`;
+        } else if (skipTrans) {
+          exampleOut = ex;
         } else {
           exampleOut = exJt ? `${ex}\n（訳）${exJt}` : ex;
         }
@@ -305,6 +333,8 @@ ${userPrompt}`;
       const questionOut =
         language === "zh" && qZh
           ? `（中文）${qZh}${qJt ? `\n（日本語訳）${qJt}` : ""}`
+          : skipTrans
+          ? q
           : qJt
           ? `${q}\n（訳）${qJt}`
           : q;
@@ -312,6 +342,7 @@ ${userPrompt}`;
       const detectedType = isIdiom ? ("idiom" as const) : (parsed.type === "idiom" ? "idiom" : "word");
       return jsonUtf8({
         type: detectedType,
+        contentLang,
         meaning: stripHtml(String(parsed.meaning ?? "").trim()),
         example: stripHtml(exampleOut),
         question: stripHtml(questionOut),

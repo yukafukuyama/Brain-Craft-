@@ -1,4 +1,5 @@
 import type { Word, WordType } from "./words";
+import type { ContentLang } from "./content-lang";
 import { DEFAULT_LIST_NAME } from "./words";
 import { storageGet, storageSet } from "./storage";
 
@@ -15,7 +16,7 @@ async function saveWords(data: Record<string, Word[]>): Promise<void> {
 
 export async function addWord(
   lineId: string,
-  word: Omit<Word, "id"> & { type?: WordType; containedWords?: string[] }
+  word: Omit<Word, "id"> & { type?: WordType; containedWords?: string[]; contentLang?: ContentLang }
 ): Promise<Word> {
   const data = await loadWords();
   const list = data[lineId] ?? [];
@@ -26,6 +27,7 @@ export async function addWord(
     listName: word.listName?.trim() || DEFAULT_LIST_NAME,
     type: word.type ?? "word",
     containedWords: word.containedWords,
+    contentLang: word.contentLang,
   };
   list.unshift(newWord);
   data[lineId] = list;
@@ -67,7 +69,7 @@ export async function getWordByExactText(lineId: string, wordText: string): Prom
 export async function updateWord(
   lineId: string,
   wordId: string,
-  updates: Partial<Pick<Word, "word" | "meaning" | "example" | "question" | "answer" | "listName" | "type" | "containedWords">>
+  updates: Partial<Pick<Word, "word" | "meaning" | "example" | "question" | "answer" | "listName" | "type" | "containedWords" | "contentLang">>
 ): Promise<boolean> {
   const data = await loadWords();
   const list = data[lineId] ?? [];
@@ -81,6 +83,7 @@ export async function updateWord(
   if (updates.listName !== undefined) word.listName = updates.listName?.trim() || DEFAULT_LIST_NAME;
   if (updates.type !== undefined) word.type = updates.type;
   if (updates.containedWords !== undefined) word.containedWords = updates.containedWords;
+  if (updates.contentLang !== undefined) word.contentLang = updates.contentLang;
   await saveWords(data);
   return true;
 }

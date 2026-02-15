@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
   const listName = String(body.listName ?? "").trim();
   const bodyType = body.type === "idiom" ? ("idiom" as const) : body.type === "word" ? ("word" as const) : undefined;
   const type = bodyType ?? (word.includes(" ") ? ("idiom" as const) : ("word" as const));
+  const contentLang = ["ja", "en", "zh"].includes(body.contentLang) ? body.contentLang : undefined;
   const isIdiom = type === "idiom";
   const containedWords = isIdiom && word.includes(" ")
     ? word.split(/\s+/).map((s) => s.trim().toLowerCase()).filter(Boolean)
@@ -48,6 +49,7 @@ export async function POST(request: NextRequest) {
       listName: listName || undefined,
       type,
       containedWords,
+      contentLang,
     });
   } catch (err) {
     console.error("Failed to save word:", err);

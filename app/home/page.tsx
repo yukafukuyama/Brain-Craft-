@@ -35,6 +35,7 @@ export default function HomePage() {
   const [generateAnswer, setGenerateAnswer] = useState(true);
   const [error, setError] = useState("");
   const [aiGeneratedType, setAiGeneratedType] = useState<"word" | "idiom" | null>(null);
+  const [aiGeneratedContentLang, setAiGeneratedContentLang] = useState<"ja" | "en" | "zh" | null>(null);
 
   useEffect(() => {
     fetch("/api/lists")
@@ -71,6 +72,7 @@ export default function HomePage() {
       if (generateQuiz) setQuestion(data.question ?? "");
       if (generateAnswer) setAnswer(data.answer ?? trimmed);
       setAiGeneratedType(data.type === "idiom" || data.type === "word" ? data.type : null);
+      setAiGeneratedContentLang(["ja", "en", "zh"].includes(data.contentLang) ? data.contentLang : null);
     } catch {
       setError(t("home.networkError"));
     } finally {
@@ -97,6 +99,7 @@ export default function HomePage() {
           answer: answer.trim(),
           listName: (newListName.trim() || listName || "").trim() || undefined,
           ...(aiGeneratedType && { type: aiGeneratedType }),
+          ...(aiGeneratedContentLang && { contentLang: aiGeneratedContentLang }),
         }),
       });
       const data = await res.json();
@@ -111,6 +114,7 @@ export default function HomePage() {
       setAnswer("");
       setNewListName("");
       setAiGeneratedType(null);
+      setAiGeneratedContentLang(null);
     } catch {
       setError(t("home.networkError"));
     } finally {

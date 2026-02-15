@@ -1,5 +1,7 @@
 export const DEFAULT_LIST_NAME = "未分類";
 
+import type { ContentLang } from "./content-lang";
+
 export type WordType = "word" | "idiom";
 
 export type Word = {
@@ -15,6 +17,8 @@ export type Word = {
   type?: WordType;
   /** イディオムの場合、構成する単語（例: "get back to" -> ["get","back","to"]） */
   containedWords?: string[];
+  /** 例文・問題文の主言語。locale と一致する場合は（訳）を非表示 */
+  contentLang?: ContentLang;
 };
 
 export const MOCK_WORDS: Word[] = [

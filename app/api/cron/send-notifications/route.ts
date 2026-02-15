@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUsersToNotify, markNotificationSent, getNotificationSettings } from "@/lib/settings-store";
+import { getUsersToNotify, markNotificationSent, getNotificationSettings, getLanguage } from "@/lib/settings-store";
 import { getWords } from "@/lib/words-store";
 import { getListNotificationSettings } from "@/lib/list-settings-store";
 import { sendPushMessage } from "@/lib/line-messaging";
@@ -53,7 +53,8 @@ export async function GET(request: NextRequest) {
       continue;
     }
 
-    const text = buildNotificationMessage(words);
+    const locale = await getLanguage(lineId);
+    const text = buildNotificationMessage(words, locale);
 
     const ok = await sendPushMessage(channelAccessToken, lineId, text);
     results.push({ lineId, ok });

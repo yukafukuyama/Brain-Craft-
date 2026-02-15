@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { SafeHtml } from "@/components/SafeHtml";
+import { useLanguage } from "@/components/LanguageProvider";
+import { filterTranslationLines } from "@/lib/content-lang";
 import type { Word } from "@/lib/words";
 
 type Props = {
@@ -10,6 +12,9 @@ type Props = {
 };
 
 export function WordDetailCard({ word, onClose }: Props) {
+  const { locale } = useLanguage();
+  const exampleFiltered = filterTranslationLines(word.example ?? "", locale, word.contentLang);
+  const questionFiltered = filterTranslationLines(word.question ?? "", locale, word.contentLang);
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
@@ -39,20 +44,20 @@ export function WordDetailCard({ word, onClose }: Props) {
             <p className="text-gray-800"><SafeHtml html={word.meaning} as="span" stripTags /></p>
           </div>
 
-          {word.example && (
+          {exampleFiltered && (
             <div>
               <p className="text-xs text-gray-500 mb-1">例文</p>
               <div className="text-gray-700 text-sm">
-                <SafeHtml html={word.example} as="div" stripTags />
+                <SafeHtml html={exampleFiltered} as="div" stripTags />
               </div>
             </div>
           )}
 
-          {word.question && (
+          {questionFiltered && (
             <div>
               <p className="text-xs text-gray-500 mb-1">問題</p>
               <div className="text-gray-700 text-sm">
-                {word.question.split("\n").map((line, i) => (
+                {questionFiltered.split("\n").map((line, i) => (
                   <p key={i} className={i > 0 ? "mt-1" : ""}>
                     <SafeHtml html={line} as="span" stripTags className={line.startsWith("（訳）") || line.startsWith("（日本語訳）") ? "text-gray-500" : ""} />
                   </p>

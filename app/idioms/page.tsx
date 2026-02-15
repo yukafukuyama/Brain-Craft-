@@ -5,13 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/BottomNav";
 import { SafeHtml } from "@/components/SafeHtml";
+import { filterTranslationLines } from "@/lib/content-lang";
 import { WordDetailCard } from "@/components/WordDetailCard";
 import { useLanguage } from "@/components/LanguageProvider";
 import type { Word } from "@/lib/words";
 
 export default function IdiomsPage() {
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const [search, setSearch] = useState("");
   const [filterList, setFilterList] = useState<string>("");
   const [lists, setLists] = useState<{ name: string; isNotificationEnabled: boolean }[]>([]);
@@ -162,7 +163,7 @@ export default function IdiomsPage() {
                     </span>
                   </div>
                   <p className="text-sm text-gray-600 mt-0.5"><SafeHtml html={item.meaning} as="span" stripTags /></p>
-                  <p className="text-sm text-gray-500 mt-1 italic line-clamp-2">&quot;<SafeHtml html={item.example ?? ""} as="span" stripTags />&quot;</p>
+                  <p className="text-sm text-gray-500 mt-1 italic line-clamp-2">&quot;<SafeHtml html={filterTranslationLines(item.example ?? "", locale, item.contentLang)} as="span" stripTags />&quot;</p>
                 </div>
                 <button
                   onClick={() => handleLearned(item.id)}

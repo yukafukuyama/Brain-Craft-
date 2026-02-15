@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getWords } from "@/lib/words-store";
 import { getListNotificationSettings } from "@/lib/list-settings-store";
-import { getNotificationSettings } from "@/lib/settings-store";
+import { getNotificationSettings, getLanguage } from "@/lib/settings-store";
 import { sendPushMessage } from "@/lib/line-messaging";
 import { buildNotificationMessage } from "@/lib/notification-message";
 
@@ -44,7 +44,8 @@ export async function POST() {
     return NextResponse.json({ error: msg }, { status: 400 });
   }
 
-  const text = buildNotificationMessage(words);
+  const locale = await getLanguage(session.lineId);
+  const text = buildNotificationMessage(words, locale);
 
   const ok = await sendPushMessage(channelAccessToken, session.lineId, text);
   if (!ok) {
