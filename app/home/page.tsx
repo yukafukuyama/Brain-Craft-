@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/BottomNav";
@@ -23,8 +23,18 @@ export default function HomePage() {
   const [example, setExample] = useState("");
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
+  const [listName, setListName] = useState("");
+  const [newListName, setNewListName] = useState("");
+  const [lists, setLists] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetch("/api/lists")
+      .then((res) => (res.ok ? res.json() : { lists: [] }))
+      .then((data) => setLists(data.lists ?? []))
+      .catch(() => setLists([]));
+  }, []);
 
   const handleRegister = async () => {
     setError("");
@@ -43,6 +53,7 @@ export default function HomePage() {
           example: example.trim(),
           question: question.trim(),
           answer: answer.trim(),
+          listName: (newListName.trim() || listName || "").trim() || undefined,
         }),
       });
       const data = await res.json();
@@ -55,6 +66,7 @@ export default function HomePage() {
       setExample("");
       setQuestion("");
       setAnswer("");
+      setNewListName("");
       router.push("/words");
     } catch {
       setError("通信エラーが発生しました");
@@ -76,6 +88,34 @@ export default function HomePage() {
       {/* Form */}
       <main className="px-4 max-w-lg mx-auto">
         <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">リスト</label>
+            <div className="flex gap-2">
+              <select
+                value={newListName ? "" : listName}
+                onChange={(e) => {
+                  setListName(e.target.value);
+                  setNewListName("");
+                }}
+                className="flex-1 px-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">未分類</option>
+                {lists.filter((l) => l !== "未分類").map((l) => (
+                  <option key={l} value={l}>{l}</option>
+                ))}
+              </select>
+              <input
+                type="text"
+                placeholder="新規リスト名"
+                value={newListName}
+                onChange={(e) => {
+                  setNewListName(e.target.value);
+                  if (e.target.value) setListName("");
+                }}
+                className="flex-1 px-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+              />
+            </div>
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">単語</label>
             <input

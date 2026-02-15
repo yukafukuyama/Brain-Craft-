@@ -50,6 +50,7 @@ export async function PATCH(
   const example = String(body.example ?? "").trim();
   const question = String(body.question ?? "").trim();
   const answer = String(body.answer ?? "").trim();
+  const listName = String(body.listName ?? "").trim();
 
   if (!word) {
     return NextResponse.json({ error: "単語を入力してください" }, { status: 400 });
@@ -61,6 +62,7 @@ export async function PATCH(
     example,
     question: question || undefined,
     answer: answer || undefined,
+    listName: listName || undefined,
   });
   if (!ok) {
     return NextResponse.json({ error: "単語が見つかりません" }, { status: 404 });

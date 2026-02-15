@@ -1,3 +1,5 @@
+export const DEFAULT_LIST_NAME = "未分類";
+
 export type Word = {
   id: string;
   word: string;
@@ -5,6 +7,7 @@ export type Word = {
   example: string;
   question?: string;
   answer?: string;
+  listName?: string;
   learnedAt?: string; // "今日" | "昨日" | "2024-10-24" etc.
 };
 

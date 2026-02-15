@@ -14,6 +14,9 @@ export default function EditWordPage() {
   const [example, setExample] = useState("");
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
+  const [listName, setListName] = useState("");
+  const [newListName, setNewListName] = useState("");
+  const [lists, setLists] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -36,6 +39,7 @@ export default function EditWordPage() {
           setExample(data.example ?? "");
           setQuestion(data.question ?? "");
           setAnswer(data.answer ?? "");
+          setListName(data.listName ?? "");
         } else {
           setError("単語が見つかりません");
         }
@@ -43,6 +47,13 @@ export default function EditWordPage() {
       .catch(() => setError("読み込みに失敗しました"))
       .finally(() => setLoading(false));
   }, [id, router]);
+
+  useEffect(() => {
+    fetch("/api/lists")
+      .then((res) => (res.ok ? res.json() : { lists: [] }))
+      .then((data) => setLists(data.lists ?? []))
+      .catch(() => setLists([]));
+  }, []);
 
   const handleSave = async () => {
     setSaving(true);
@@ -57,6 +68,7 @@ export default function EditWordPage() {
           example: example.trim(),
           question: question.trim(),
           answer: answer.trim(),
+          listName: (newListName.trim() || listName || "").trim() || undefined,
         }),
       });
       const data = await res.json();
@@ -130,6 +142,34 @@ export default function EditWordPage() {
       {/* Form */}
       <main className="flex-1 px-4 py-6 max-w-lg mx-auto w-full">
         <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">リスト</label>
+            <div className="flex gap-2">
+              <select
+                value={newListName ? "" : (listName || "")}
+                onChange={(e) => {
+                  setListName(e.target.value);
+                  setNewListName("");
+                }}
+                className="flex-1 px-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">未分類</option>
+                {lists.filter((l) => l !== "未分類").map((l) => (
+                  <option key={l} value={l}>{l}</option>
+                ))}
+              </select>
+              <input
+                type="text"
+                placeholder="新規リスト名"
+                value={newListName}
+                onChange={(e) => {
+                  setNewListName(e.target.value);
+                  if (e.target.value) setListName("");
+                }}
+                className="flex-1 px-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+              />
+            </div>
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">単語</label>
             <div className="relative">

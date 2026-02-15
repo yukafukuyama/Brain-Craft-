@@ -9,6 +9,8 @@ import type { Word } from "@/lib/words";
 export default function WordsPage() {
   const router = useRouter();
   const [search, setSearch] = useState("");
+  const [filterList, setFilterList] = useState<string>("");
+  const [lists, setLists] = useState<string[]>([]);
   const [words, setWords] = useState<Word[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,8 +30,22 @@ export default function WordsPage() {
       .finally(() => setLoading(false));
   }, [router]);
 
+  useEffect(() => {
+    fetch("/api/lists")
+      .then((res) => (res.ok ? res.json() : { lists: [] }))
+      .then((data) => setLists(data.lists ?? []))
+      .catch(() => setLists([]));
+  }, []);
+
   const filteredWords = words
     .filter((w) => !w.learnedAt)
+    .filter((w) => {
+      if (filterList) {
+        const wList = w.listName?.trim() || "未分類";
+        if (wList !== filterList) return false;
+      }
+      return true;
+    })
     .filter(
       (w) =>
         w.word.toLowerCase().includes(search.toLowerCase()) ||
@@ -64,8 +80,18 @@ export default function WordsPage() {
         </Link>
       </header>
 
-      {/* Search */}
-      <div className="px-4 mb-4">
+      {/* List filter & Search */}
+      <div className="px-4 mb-4 space-y-3">
+        <select
+          value={filterList}
+          onChange={(e) => setFilterList(e.target.value)}
+          className="w-full px-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">すべてのリスト</option>
+          {lists.map((l) => (
+            <option key={l} value={l}>{l}</option>
+          ))}
+        </select>
         <div className="relative">
           <svg
             className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
@@ -96,6 +122,11 @@ export default function WordsPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-gray-900">{item.word}</span>
+                  {(item.listName?.trim() || "未分類") !== "未分類" && (
+                    <span className="text-xs px-2 py-0.5 bg-gray-200 rounded text-gray-600">
+                      {item.listName}
+                    </span>
+                  )}
                   <Link
                     href={`/words/${item.id}/edit`}
                     className="text-blue-600 p-1"

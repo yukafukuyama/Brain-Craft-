@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
   const example = String(body.example ?? "").trim();
   const question = String(body.question ?? "").trim();
   const answer = String(body.answer ?? "").trim();
+  const listName = String(body.listName ?? "").trim();
 
   if (!word) {
     return NextResponse.json({ error: "単語を入力してください" }, { status: 400 });
@@ -30,7 +31,14 @@ export async function POST(request: NextRequest) {
 
   let newWord;
   try {
-    newWord = await addWord(session.lineId, { word, meaning, example, question: question || undefined, answer: answer || undefined });
+    newWord = await addWord(session.lineId, {
+      word,
+      meaning,
+      example,
+      question: question || undefined,
+      answer: answer || undefined,
+      listName: listName || undefined,
+    });
   } catch (err) {
     console.error("Failed to save word:", err);
     const hasKv = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
@@ -45,7 +53,9 @@ export async function POST(request: NextRequest) {
 
   const channelAccessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
   if (channelAccessToken) {
-    const lines = [`【${word}】`];
+    const effectiveList = listName || "未分類";
+    const listLabel = effectiveList !== "未分類" ? `リスト名：${effectiveList}\n` : "";
+    const lines = [`${listLabel}【${word}】`];
     if (meaning) lines.push(`意味: ${meaning}`);
     if (example) lines.push(`例文: ${example}`);
     if (question) lines.push(`問題: ${question}`);

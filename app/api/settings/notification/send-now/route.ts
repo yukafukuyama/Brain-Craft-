@@ -27,7 +27,8 @@ export async function POST() {
   }
 
   const blocks = words.map((w) => {
-    const parts = [`【${w.word}】`];
+    const listLabel = (w.listName?.trim() || "未分類") !== "未分類" ? `リスト名：${w.listName}\n` : "";
+    const parts = [`${listLabel}【${w.word}】`];
     if (w.meaning) parts.push(`意味: ${w.meaning}`);
     if (w.example) parts.push(`例文: ${w.example}`);
     if (w.question) parts.push(`問題: ${w.question}`);
