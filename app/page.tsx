@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { Logo } from "@/components/Logo";
 import { CopyableInstructions } from "@/components/CopyableInstructions";
+import { CopyableUrl } from "@/components/CopyableUrl";
 
 export default async function SplashPage({
   searchParams,
@@ -80,12 +81,15 @@ export default async function SplashPage({
         </Link>
 
         {process.env.NODE_ENV === "development" && (
-          <Link
-            href="/api/dev/login"
-            className="mt-4 text-sm text-amber-600 hover:text-amber-700 underline"
-          >
-            開発用：既存データでログイン
-          </Link>
+          <div className="mt-4 flex flex-col items-center gap-2">
+            <Link
+              href="/api/dev/login"
+              className="text-sm text-amber-600 hover:text-amber-700 underline"
+            >
+              開発用：既存データでログイン
+            </Link>
+            <CopyableUrl />
+          </div>
         )}
         <details className="mt-8 w-full max-w-sm text-left">
           <summary className="text-sm text-gray-500 cursor-pointer hover:text-gray-700">
