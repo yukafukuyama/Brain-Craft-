@@ -90,15 +90,15 @@ export default function ListsPage() {
                   <div className="flex items-center gap-3 min-w-0">
                     {!list.isNotificationEnabled && (
                       <span
-                        className="shrink-0 w-10 h-10 flex items-center justify-center text-2xl"
+                        className="shrink-0 w-7 h-7 flex items-center justify-center text-base"
                         aria-hidden
                       >
                         🔕
                       </span>
                     )}
                     <div className="min-w-0">
-                      <h2 className="font-bold text-gray-900 text-lg truncate">{list.name}</h2>
-                      <p className="text-xs text-gray-500 mt-0.5">
+                      <h2 className="font-bold text-gray-900 truncate">{list.name}</h2>
+                      <p className="text-[11px] text-gray-500 mt-0.5">
                         {list.isNotificationEnabled ? "通知ON" : "通知OFF"}
                       </p>
                     </div>
@@ -113,13 +113,13 @@ export default function ListsPage() {
                       onClick={() =>
                         handleToggleNotification(list.name, !list.isNotificationEnabled)
                       }
-                      className={`relative inline-flex h-11 w-16 shrink-0 cursor-pointer rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 touch-manipulation ${
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 disabled:opacity-50 touch-manipulation ${
                         list.isNotificationEnabled ? "bg-blue-600" : "bg-gray-300"
                       }`}
                     >
                       <span
-                        className={`pointer-events-none absolute top-1 inline-block h-9 w-9 rounded-full bg-white shadow-md transition-transform ${
-                          list.isNotificationEnabled ? "left-7" : "left-1"
+                        className={`pointer-events-none absolute top-0.5 inline-block h-5 w-5 rounded-full bg-white shadow transition ${
+                          list.isNotificationEnabled ? "left-6" : "left-0.5"
                         }`}
                       />
                     </button>
@@ -128,7 +128,7 @@ export default function ListsPage() {
                         type="button"
                         onClick={() => handleDeleteList(list.name)}
                         disabled={deleting === list.name}
-                        className="px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50 touch-manipulation min-h-[44px]"
+                        className="px-2 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50 touch-manipulation"
                       >
                         {deleting === list.name ? "削除中..." : "削除"}
                       </button>
