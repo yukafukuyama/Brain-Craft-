@@ -50,12 +50,11 @@ export default function AuthSuccessPage() {
         </Link>
 
         <div className="w-full space-y-4">
-          <a
-            href="/home"
-            className="block w-full p-4 bg-gray-100 rounded-xl flex items-center justify-between"
+          <div
+            className="block w-full p-4 bg-gray-100 rounded-xl flex items-center justify-between pointer-events-none select-none"
           >
             <span className="flex items-center gap-3">
-              <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-sm flex items-center justify-center font-medium">0</span>
+              <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-sm flex items-center justify-center font-medium">1</span>
               <span className="text-gray-800">お使いのブラウザで開く</span>
             </span>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -63,7 +62,7 @@ export default function AuthSuccessPage() {
               <polyline points="15 3 21 3 21 9" />
               <line x1="10" y1="14" x2="21" y2="3" />
             </svg>
-          </a>
+          </div>
 
           <div id="add-to-home" className="grid grid-cols-2 gap-4">
             <div className="p-4 bg-gray-100 rounded-xl">
