@@ -55,6 +55,17 @@ export async function markWordAsLearned(lineId: string, wordId: string): Promise
   return true;
 }
 
+export async function deleteWord(lineId: string, wordId: string): Promise<boolean> {
+  const data = await loadWords();
+  const list = data[lineId] ?? [];
+  const idx = list.findIndex((w) => w.id === wordId);
+  if (idx < 0) return false;
+  list.splice(idx, 1);
+  data[lineId] = list;
+  await saveWords(data);
+  return true;
+}
+
 export async function getLearnedWords(lineId: string): Promise<Word[]> {
   const list = await getWords(lineId);
   const learned = list.filter((w) => w.learnedAt).sort((a, b) => (b.learnedAt ?? "").localeCompare(a.learnedAt ?? ""));

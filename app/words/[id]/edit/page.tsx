@@ -14,6 +14,7 @@ export default function EditWordPage() {
   const [example, setExample] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -58,6 +59,25 @@ export default function EditWordPage() {
       setError("通信エラー");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm("この単語を削除しますか？")) return;
+    setDeleting(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/words/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        router.push("/words");
+      } else {
+        const data = await res.json();
+        setError(data.error || "削除に失敗しました");
+      }
+    } catch {
+      setError("通信エラー");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -134,6 +154,17 @@ export default function EditWordPage() {
               rows={3}
               className="w-full px-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-blue-500 resize-none"
             />
+          </div>
+
+          <div className="pt-6 border-t border-gray-200">
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={deleting}
+              className="w-full py-3 text-red-600 font-medium border border-red-200 rounded-xl hover:bg-red-50 disabled:opacity-50 transition-colors"
+            >
+              {deleting ? "削除中..." : "この単語を削除"}
+            </button>
           </div>
         </div>
       </main>
