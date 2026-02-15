@@ -5,6 +5,7 @@ import {
   decodeIdToken,
   parseStateForVerifier,
 } from "@/lib/auth/line";
+import { getSessionCookieOptions } from "@/lib/session-cookie";
 
 function getBaseUrl(request: NextRequest): string {
   const envUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
@@ -77,13 +78,7 @@ export async function GET(request: NextRequest) {
     });
 
     const isProd = process.env.NODE_ENV === "production";
-    cookieStore.set("braincraft_session", session, {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? "none" : "lax",
-      maxAge: 60 * 60 * 24 * 30,
-      path: "/",
-    });
+    cookieStore.set("braincraft_session", session, getSessionCookieOptions(isProd));
 
     return NextResponse.redirect(new URL("/auth/success", request.url));
   } catch (err) {

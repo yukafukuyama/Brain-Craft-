@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { getSessionCookieOptions } from "@/lib/session-cookie";
 
 const DEV_LINE_ID = "U41171324e47ec0fd149fd94ce438a5f3";
 
@@ -19,13 +20,7 @@ export async function GET(request: NextRequest) {
   });
 
   const cookieStore = await cookies();
-  cookieStore.set("braincraft_session", session, {
-    httpOnly: true,
-    secure: false,
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 30,
-    path: "/",
-  });
+  cookieStore.set("braincraft_session", session, getSessionCookieOptions(false));
 
   return NextResponse.redirect(new URL("/home", request.url));
 }

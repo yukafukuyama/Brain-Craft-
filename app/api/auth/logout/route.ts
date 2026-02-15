@@ -6,6 +6,7 @@ export async function GET(request: NextRequest) {
   const isProd = process.env.NODE_ENV === "production";
   cookieStore.set("braincraft_session", "", {
     maxAge: 0,
+    expires: new Date(0),
     path: "/",
     httpOnly: true,
     secure: isProd,
