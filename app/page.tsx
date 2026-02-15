@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { Logo } from "@/components/Logo";
+import { CopyableInstructions } from "@/components/CopyableInstructions";
 
 export default async function SplashPage({
   searchParams,
@@ -22,8 +23,8 @@ export default async function SplashPage({
         // パース失敗時はログイン画面を表示
       }
     }
-    // LINE設定あり：未ログインなら直接LINE認証へ（古いStateは /api/auth/line でクリアされる）
-    if (process.env.LINE_CHANNEL_ID) {
+    // LINE設定あり：未ログインなら直接LINE認証へ（開発時はログイン画面を表示して開発用ログインを使えるようにする）
+    if (process.env.LINE_CHANNEL_ID && process.env.NODE_ENV === "production") {
       redirect("/api/auth/line");
     }
   }
@@ -90,16 +91,23 @@ export default async function SplashPage({
           <summary className="text-sm text-gray-500 cursor-pointer hover:text-gray-700">
             うまくログインできない場合
           </summary>
-          <ul className="mt-2 text-xs text-gray-600 space-y-1 pl-4 list-disc">
-            <li>
-              <strong>1回でログインできない場合</strong>：何度かログインボタンを押してお試しください
-            </li>
-            <li>
-              エラーになる場合：LINEアプリ内で開いていると失敗しやすいです。右上「…」→「ブラウザで開く」でSafariやChromeを選んでください
-            </li>
-            <li>ブラウザのCookieを有効にしてください</li>
-            <li>「Login to Vercel」と出る→管理者に連絡してください</li>
-          </ul>
+          <CopyableInstructions
+            text={`・1回でログインできない場合：何度かログインボタンを押してお試しください
+・エラーになる場合：LINEアプリ内で開いていると失敗しやすいです。右上「…」→「ブラウザで開く」でSafariやChromeを選んでください
+・ブラウザのCookieを有効にしてください
+・「Login to Vercel」と出る→管理者に連絡してください`}
+          >
+            <ul className="mt-2 text-xs text-gray-600 space-y-1 pl-4 list-disc">
+              <li>
+                <strong>1回でログインできない場合</strong>：何度かログインボタンを押してお試しください
+              </li>
+              <li>
+                エラーになる場合：LINEアプリ内で開いていると失敗しやすいです。右上「…」→「ブラウザで開く」でSafariやChromeを選んでください
+              </li>
+              <li>ブラウザのCookieを有効にしてください</li>
+              <li>「Login to Vercel」と出る→管理者に連絡してください</li>
+            </ul>
+          </CopyableInstructions>
         </details>
       </div>
 

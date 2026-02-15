@@ -10,11 +10,15 @@ import { join } from "path";
 const DATA_DIR = join(process.cwd(), "data");
 
 async function getKv() {
-  if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+  const url = process.env.KV_REST_API_URL?.trim();
+  const token = process.env.KV_REST_API_TOKEN?.trim();
+  if (!url || !token) return null;
+  try {
     const { kv } = await import("@vercel/kv");
     return kv;
+  } catch {
+    return null;
   }
-  return null;
 }
 
 export async function storageGet<T>(key: string): Promise<T | null> {
@@ -24,6 +28,7 @@ export async function storageGet<T>(key: string): Promise<T | null> {
     return v as T | null;
   }
   try {
+    await mkdir(DATA_DIR, { recursive: true });
     const safeKey = key.replace(/:/g, "_");
     const path = join(DATA_DIR, `${safeKey}.json`);
     const data = await readFile(path, "utf-8");
@@ -54,6 +59,7 @@ export async function storageKeys(prefix: string): Promise<string[]> {
   }
   // ファイルの場合は簡易実装（ディレクトリ読み取り）
   try {
+    await mkdir(DATA_DIR, { recursive: true });
     const { readdir } = await import("fs/promises");
     const files = await readdir(DATA_DIR);
     const safePrefix = prefix.replace(/:/g, "_");

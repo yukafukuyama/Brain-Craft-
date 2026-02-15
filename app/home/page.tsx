@@ -296,7 +296,7 @@ export default function HomePage() {
         </div>
       </main>
 
-      <BottomNav variant="3" />
+      <BottomNav variant="4" />
     </div>
   );
 }

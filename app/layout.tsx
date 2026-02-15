@@ -2,12 +2,15 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "BrainCraft - 学習",
-  description: "覚えられない単語を、日常の一部に！",
-  icons: {
-    icon: "/logo.png",
-    apple: "/apple-touch-icon.png",
+  title: {
+    default: "BrainCraft - 学習",
+    template: "%s | BrainCraft",
   },
+  description: "覚えられない単語を、日常の一部に！",
+  icons: [
+    { rel: "icon", url: "/logo.png", type: "image/png" },
+    { rel: "apple-touch-icon", url: "/apple-touch-icon.png", sizes: "180x180" },
+  ],
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
