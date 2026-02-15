@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
         return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
       })
       .filter(Boolean)
-      .slice(0, 3);
+      .slice(0, 5);
   } else if (body.time != null) {
     const time = String(body.time).trim();
     const match = time.match(/^(\d{1,2}):(\d{1,2})$/);

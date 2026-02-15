@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { BottomNav } from "@/components/BottomNav";
 
@@ -14,44 +14,98 @@ const LINE_DEEP_LINK = LINE_ADD_FRIEND_URL
   ? LINE_ADD_FRIEND_URL.replace(/^https:\/\/line\.me\/R?\/?/, "line://")
   : "";
 
+const SLOT_COUNT = 5;
+
+function isValidTime(s: string): boolean {
+  return /^\d{1,2}:\d{1,2}$/.test(s.trim());
+}
+
 export default function NotificationPage() {
   const [notificationEnabled, setNotificationEnabled] = useState(false);
-  const [notificationTimes, setNotificationTimes] = useState<string[]>(["08:00", "", ""]);
+  const [notificationTimes, setNotificationTimes] = useState<(string | null)[]>(
+    Array(SLOT_COUNT).fill(null)
+  );
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+  const timeInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     fetch("/api/settings/notification")
-      .then((res) => (res.ok ? res.json() : { enabled: false, times: ["08:00"] }))
+      .then((res) => (res.ok ? res.json() : { enabled: false, times: [] }))
       .then((data: { enabled?: boolean; time?: string; times?: string[] }) => {
         setNotificationEnabled(data.enabled ?? false);
-        const ts = data.times ?? (data.time ? [data.time] : ["08:00"]);
-        setNotificationTimes([ts[0] ?? "08:00", ts[1] ?? "", ts[2] ?? ""]);
+        const ts = data.times ?? (data.time ? [data.time] : []);
+        const filled: (string | null)[] = Array(SLOT_COUNT).fill(null);
+        ts.slice(0, SLOT_COUNT).forEach((t, i) => {
+          if (t && isValidTime(t)) filled[i] = t;
+        });
+        setNotificationTimes(filled);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  const handleSaveNotification = async (overrides?: { enabled?: boolean; times?: string[] }) => {
+  const getValidTimes = (times: (string | null)[]): string[] => {
+    return times.filter((t): t is string => t != null && t.trim() !== "" && isValidTime(t));
+  };
+
+  const checkDuplicates = (times: (string | null)[]): string[] => {
+    const valid = getValidTimes(times);
+    const seen = new Set<string>();
+    const dups: string[] = [];
+    for (const t of valid) {
+      if (seen.has(t)) dups.push(t);
+      else seen.add(t);
+    }
+    return [...new Set(dups)];
+  };
+
+  const handleSaveNotification = async (overrides?: { enabled?: boolean; times?: (string | null)[] }) => {
+    const times = overrides?.times ?? notificationTimes;
+    const valid = getValidTimes(times);
+    const dups = checkDuplicates(times);
+    if (dups.length > 0) {
+      setDuplicateWarning(`同じ時刻（${dups.join(", ")}）が重複しています`);
+      return;
+    }
+    setDuplicateWarning(null);
     setSaving(true);
     setSaved(false);
     try {
       const enabled = overrides?.enabled ?? notificationEnabled;
-      const times = (overrides?.times ?? notificationTimes).filter((t) => t.trim());
       const res = await fetch("/api/settings/notification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enabled, times: times.length ? times : ["08:00"] }),
+        body: JSON.stringify({
+          enabled,
+          times: valid, // 空の場合は [] で通知なし
+        }),
       });
       if (res.ok) {
         if (overrides?.enabled !== undefined) setNotificationEnabled(overrides.enabled);
+        if (overrides?.times !== undefined) setNotificationTimes(overrides.times);
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
       }
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleTimeChange = (index: number, value: string) => {
+    const next = [...notificationTimes];
+    next[index] = value.trim() === "" ? null : value;
+    setNotificationTimes(next);
+    setDuplicateWarning(null);
+  };
+
+  const handleClearSlot = (index: number) => {
+    const next = [...notificationTimes];
+    next[index] = null;
+    setNotificationTimes(next);
+    setDuplicateWarning(null);
   };
 
   return (
@@ -86,23 +140,56 @@ export default function NotificationPage() {
               {notificationEnabled && (
                 <div className="space-y-3 pt-2 border-t border-gray-200">
                   <span className="block text-sm font-medium text-gray-700">
-                    送信時刻（最大3つ・日本時間）
+                    送信時刻（最大5つ・日本時間）
                   </span>
-                  <div className="flex flex-wrap gap-2">
-                    {[0, 1, 2].map((i) => (
-                      <input
-                        key={i}
-                        type="time"
-                        value={notificationTimes[i] ?? ""}
-                        onChange={(e) => {
-                          const next = [...notificationTimes];
-                          next[i] = e.target.value;
-                          setNotificationTimes(next);
-                        }}
-                        className="px-4 py-2.5 bg-white rounded-lg border border-gray-200 text-base"
-                      />
+                  <p className="text-xs text-gray-500">タップして時刻を入力。未選択は「--:--」</p>
+
+                  <div className="space-y-2">
+                    {[0, 1, 2, 3, 4].map((i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <div className="relative flex-1 min-w-0">
+                          <input
+                            ref={(el) => { timeInputRefs.current[i] = el; }}
+                            type="time"
+                            value={notificationTimes[i] ?? ""}
+                            onChange={(e) => handleTimeChange(i, e.target.value)}
+                            className={`w-full px-4 py-2.5 rounded-lg border text-base min-h-[42px] ${
+                              notificationTimes[i]
+                                ? "bg-white border-gray-200"
+                                : "bg-white border-dashed border-gray-300"
+                            }`}
+                          />
+                          {!notificationTimes[i] && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                timeInputRefs.current[i]?.showPicker?.();
+                                timeInputRefs.current[i]?.focus();
+                              }}
+                              className="absolute inset-0 w-full flex items-center justify-center text-gray-400 text-base cursor-pointer rounded-lg border-0 bg-transparent"
+                            >
+                              --:--
+                            </button>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleClearSlot(i)}
+                          aria-label={`スロット${i + 1}をクリア`}
+                          className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M18 6L6 18M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
                     ))}
                   </div>
+
+                  {duplicateWarning && (
+                    <p className="text-sm text-amber-600">{duplicateWarning}</p>
+                  )}
+
                   <button
                     type="button"
                     onClick={() => handleSaveNotification()}

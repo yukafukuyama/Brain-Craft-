@@ -5,7 +5,7 @@ const SETTINGS_PREFIX = "settings:";
 export type NotificationSettings = {
   enabled: boolean;
   time?: string; // 後方互換
-  times?: string[]; // "HH:mm" 最大3つ e.g. ["08:00", "12:00", "20:00"]
+  times?: string[]; // "HH:mm" 最大5つ。空配列 = 通知なし
   lastSentDate?: string;
   lastSentTimes?: string[]; // 同日に送信済みの時刻
 };
@@ -14,10 +14,10 @@ type UserSettings = { notification: NotificationSettings };
 
 async function getSettings(lineId: string): Promise<UserSettings> {
   const data = await storageGet<UserSettings>(SETTINGS_PREFIX + lineId);
-  if (!data) return { notification: { enabled: false, times: ["08:00"] } };
+  if (!data) return { notification: { enabled: false, times: [] } };
   const n = data.notification;
   if (!n.times?.length && n.time) n.times = [n.time];
-  if (!n.times?.length) n.times = ["08:00"];
+  if (n.times === undefined) n.times = [];
   return data;
 }
 
@@ -36,9 +36,9 @@ export async function setNotificationSettings(
 ): Promise<NotificationSettings> {
   const current = await getSettings(lineId);
   const n = current.notification;
-  let times = settings.times ?? n.times ?? (n.time ? [n.time] : ["08:00"]);
-  times = times.slice(0, 3).filter((t) => /^\d{1,2}:\d{1,2}$/.test(t));
-  if (times.length === 0) times = ["08:00"];
+  let times = settings.times ?? n.times ?? (n.time ? [n.time] : []);
+  times = times.slice(0, 5).filter((t) => /^\d{1,2}:\d{1,2}$/.test(t));
+  // 空配列 = 通知なし（デフォルトで08:00を入れない）
   const updated = { ...n, ...settings, times } as NotificationSettings;
   await setSettings(lineId, { notification: updated });
   return updated;
