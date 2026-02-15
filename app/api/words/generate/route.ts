@@ -2,25 +2,42 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { GoogleGenAI } from "@google/genai";
 
-const SYSTEM_PROMPT = `単語学習アプリ用のデータを生成してください。
+function buildSystemPrompt(generateQuiz: boolean, generateAnswer: boolean): string {
+  const base = `単語学習アプリ用のデータを生成してください。
 
 【多言語対応】
-入力された単語の言語を自動で判別し、その言語の学習に最適な例文と問題を作成してください。
+入力された単語の言語を自動で判別し、その言語の学習に最適な例文を作成してください。
 英語、韓国語、中国語、フランス語、スペイン語など、あらゆる言語に対応してください。
 
 【日本語訳の必須追加】
-例文（example）と穴埋め問題（quiz）には、必ずその日本語訳（example_jt, quiz_jt）をセットで付けてください。
+例文（example）には、必ずその日本語訳（example_jt）をセットで付けてください。`;
+
+  const quizSection = generateQuiz
+    ? `穴埋め問題（quiz）を作成する場合も、必ずその日本語訳（quiz_jt）をセットで付けてください。`
+    : "";
+
+  const jsonFields = [
+    '"meaning": "単語の意味（日本語）"',
+    '"example": "例文（対象言語）"',
+    '"example_jt": "例文の日本語訳"',
+  ];
+  if (generateQuiz) {
+    jsonFields.push('"quiz": "穴埋め問題（対象言語。空欄は ___ で示す）"');
+    jsonFields.push('"quiz_jt": "穴埋め問題の日本語訳"');
+  }
+  if (generateAnswer) {
+    jsonFields.push('"answer": "穴埋めの答え（入力された単語そのもの）"');
+  }
+
+  return `${base}
+${quizSection}
 
 【出力フォーマット】
 レスポンスは必ず以下のJSON形式のみで返してください。他のテキストやマークダウンは含めないでください。
 {
-  "meaning": "単語の意味（日本語）",
-  "example": "例文（対象言語）",
-  "example_jt": "例文の日本語訳",
-  "quiz": "穴埋め問題（対象言語。空欄は ___ で示す）",
-  "quiz_jt": "穴埋め問題の日本語訳",
-  "answer": "穴埋めの答え（入力された単語そのもの）"
+  ${jsonFields.join(",\n  ")}
 }`;
+}
 
 export async function POST(request: NextRequest) {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -45,14 +62,23 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json();
   const word = String(body.word ?? "").trim();
+  const generateQuiz = body.generateQuiz !== false;
+  const generateAnswer = body.generateAnswer !== false;
+
   if (!word) {
     return NextResponse.json({ error: "単語を入力してください" }, { status: 400 });
   }
 
-  const ai = new GoogleGenAI({ apiKey });
-  const prompt = `${SYSTEM_PROMPT}
+  const systemPrompt = buildSystemPrompt(generateQuiz, generateAnswer);
+  const parts = ["意味", "例文"];
+  if (generateQuiz) parts.push("穴埋め形式の問題");
+  if (generateAnswer) parts.push("その答え");
+  const userPrompt = `次の単語の${parts.join("、")}を生成してください：${word}`;
 
-次の単語の意味、例文、穴埋め形式の問題、その答えを生成してください：${word}`;
+  const ai = new GoogleGenAI({ apiKey });
+  const prompt = `${systemPrompt}
+
+${userPrompt}`;
 
   const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-flash-8b", "gemini-pro"] as const;
 
@@ -82,9 +108,9 @@ export async function POST(request: NextRequest) {
 
       const ex = String(parsed.example ?? "").trim();
       const exJt = String(parsed.example_jt ?? "").trim();
-      const q = String(parsed.quiz ?? parsed.question ?? "").trim();
-      const qJt = String(parsed.quiz_jt ?? "").trim();
-      const ans = String(parsed.answer ?? word).trim() || word;
+      const q = generateQuiz ? String(parsed.quiz ?? parsed.question ?? "").trim() : "";
+      const qJt = generateQuiz ? String(parsed.quiz_jt ?? "").trim() : "";
+      const ans = generateAnswer ? (String(parsed.answer ?? word).trim() || word) : "";
 
       return NextResponse.json({
         meaning: String(parsed.meaning ?? "").trim(),

@@ -28,6 +28,8 @@ export default function HomePage() {
   const [lists, setLists] = useState<{ name: string; isNotificationEnabled: boolean }[]>([]);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [generateQuiz, setGenerateQuiz] = useState(true);
+  const [generateAnswer, setGenerateAnswer] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -49,7 +51,11 @@ export default function HomePage() {
       const res = await fetch("/api/words/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ word: trimmed }),
+        body: JSON.stringify({
+          word: trimmed,
+          generateQuiz,
+          generateAnswer,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -58,8 +64,8 @@ export default function HomePage() {
       }
       setMeaning(data.meaning ?? "");
       setExample(data.example ?? "");
-      setQuestion(data.question ?? "");
-      setAnswer(data.answer ?? trimmed);
+      if (generateQuiz) setQuestion(data.question ?? "");
+      if (generateAnswer) setAnswer(data.answer ?? trimmed);
     } catch {
       setError("通信エラーが発生しました");
     } finally {
@@ -176,6 +182,26 @@ export default function HomePage() {
                 )}
               </button>
             </div>
+            <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-gray-600">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={generateQuiz}
+                  onChange={(e) => setGenerateQuiz(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300"
+                />
+                問題を生成
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={generateAnswer}
+                  onChange={(e) => setGenerateAnswer(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300"
+                />
+                答えを生成
+              </label>
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">意味</label>
@@ -199,12 +225,12 @@ export default function HomePage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">問題</label>
-            <input
-              type="text"
+            <textarea
               placeholder="例: 回復力、弾力性を表す英単語は？"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-blue-500"
+              rows={3}
+              className="w-full px-4 py-3 bg-gray-100 rounded-xl border-0 focus:ring-2 focus:ring-blue-500 resize-y min-h-[80px]"
             />
           </div>
           <div>
