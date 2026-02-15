@@ -139,6 +139,14 @@ export default function NotificationPage() {
               >
                 今すぐ送信してテスト
               </button>
+
+              <Link
+                href="/lists"
+                className="flex items-center justify-between w-full py-3 px-4 bg-white rounded-lg border border-gray-200 hover:bg-gray-50"
+              >
+                <span className="text-gray-800 font-medium">リスト別の通知ON/OFF</span>
+                <span className="text-blue-600 text-sm">→</span>
+              </Link>
             </>
           )}
         </section>
