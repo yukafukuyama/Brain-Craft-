@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: "覚えられない単語を、日常の一部に！",
   icons: {
     icon: "/logo.png",
-    apple: "/logo.png",
+    apple: "/apple-touch-icon.png",
   },
   appleWebApp: {
     capable: true,

@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
       path: "/",
     });
 
-    return NextResponse.redirect(new URL("/home", request.url));
+    return NextResponse.redirect(new URL("/auth/success", request.url));
   } catch (err) {
     console.error("LINE token exchange error:", err);
     return NextResponse.redirect(new URL("/?error=token_exchange", request.url));

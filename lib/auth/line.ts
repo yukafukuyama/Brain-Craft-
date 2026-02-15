@@ -53,6 +53,7 @@ export function buildAuthUrl(params: {
     scope: "profile openid",
     code_challenge: codeChallenge,
     code_challenge_method: "S256",
+    openExternalBrowser: "1",
   });
   return `${LINE_AUTH_URL}?${searchParams.toString()}`;
 }
