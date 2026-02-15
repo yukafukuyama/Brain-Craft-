@@ -6,12 +6,12 @@ import { Logo } from "@/components/Logo";
 export default async function SplashPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; logout?: string }>;
 }) {
   const params = await searchParams;
 
-  // ログイン済みならホームへ自動リダイレクト
-  if (!params.error) {
+  // ログイン済みならホームへ、ログアウト直後は自動リダイレクトせずログイン画面を表示
+  if (!params.error && !params.logout) {
     const cookieStore = await cookies();
     const session = cookieStore.get("braincraft_session")?.value;
     if (session) {

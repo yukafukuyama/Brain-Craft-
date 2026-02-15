@@ -1,10 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { BottomNav } from "@/components/BottomNav";
 import { Logo } from "@/components/Logo";
 
 export default function SettingsPage() {
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = () => {
+    setLoggingOut(true);
+    window.location.href = "/api/auth/logout";
+  };
   return (
     <div className="min-h-screen bg-white pb-20">
       <header className="px-4 pt-6 pb-4">
@@ -32,12 +39,14 @@ export default function SettingsPage() {
           <h2 className="text-sm font-medium text-gray-500 mb-2">アカウント</h2>
           <div className="bg-gray-50 rounded-xl p-4 space-y-2">
             <p className="text-gray-700">LINEでログイン済み</p>
-            <a
-              href="/api/auth/logout"
-              className="text-sm text-red-600 hover:underline"
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={loggingOut}
+              className="text-sm text-red-600 hover:underline disabled:opacity-50"
             >
-              ログアウト
-            </a>
+              {loggingOut ? "ログアウト中..." : "ログアウト"}
+            </button>
           </div>
         </section>
 
