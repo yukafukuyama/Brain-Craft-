@@ -42,7 +42,12 @@ function QuizTestContent() {
         return res.json();
       })
       .then((data) => {
-        const words = (data.words ?? []).filter((w: { learnedAt?: string }) => !w.learnedAt);
+        const words = (data.words ?? []).filter((w: { learnedAt?: string; word?: string; meaning?: string }) => {
+          if (w.learnedAt) return false;
+          const word = (w.word ?? "").trim();
+          const meaning = (w.meaning ?? "").trim();
+          return word.length > 0 && meaning.length > 0;
+        });
         const filtered = listParam
           ? words.filter((w: { listName?: string }) => {
               const wList = (w.listName ?? "").trim() || "未分類";
